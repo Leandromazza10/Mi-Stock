@@ -40,6 +40,107 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* ========== ALERTA FIJA DE STOCK ========== */
+        .alerta-stock-fija {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.5s ease;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .alerta-stock-fija.activa {
+            display: block;
+        }
+
+        .alerta-stock-fija h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alerta-stock-fija .alerta-items {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .alerta-stock-fija .alerta-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alerta-stock-fija .alerta-item.sin-stock {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .alerta-stock-fija .alerta-item.stock-bajo {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .alerta-stock-fija .alerta-item .producto-nombre {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .alerta-stock-fija .alerta-item .producto-stock {
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .alerta-stock-fija .alerta-item .producto-stock.sin-stock {
+            background: #dc3545;
+            color: white;
+        }
+
+        .alerta-stock-fija .alerta-item .producto-stock.stock-bajo {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .alerta-stock-fija .btn-resolver {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .alerta-stock-fija .btn-resolver:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== MENÚ ========== */
         .menu {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -74,7 +175,6 @@
         .menu .btn-warning { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
         .menu .btn-ventas { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #333; }
         .menu .btn-diarias { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: #333; }
-        .menu .btn-whatsapp { background: linear-gradient(135deg, #25d366 0%, #128C7E 100%); }
 
         .panel {
             background: #f8f9fa;
@@ -87,17 +187,6 @@
 
         .panel.active {
             display: block;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .panel h2 {
@@ -189,23 +278,6 @@
             box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
         }
 
-        .btn-whatsapp {
-            background: linear-gradient(135deg, #25d366 0%, #128C7E 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-whatsapp:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
-        }
-
         .btn-secondary {
             background: #6c757d;
             color: white;
@@ -291,18 +363,19 @@
         }
 
         .producto-cantidad.bajo-stock {
-            background: #f5576c;
-            animation: pulse 1s infinite;
+            background: #ffc107;
+            color: #333;
+            animation: pulse 1.5s infinite;
         }
 
         .producto-cantidad.sin-stock {
             background: #dc3545;
-            animation: pulse 0.5s infinite;
+            animation: pulse 0.8s infinite;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.08); }
         }
 
         .total-general {
@@ -343,13 +416,6 @@
             background: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
-        }
-
-        .mensaje.whatsapp {
-            display: block;
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #25d366;
         }
 
         .venta-item {
@@ -507,19 +573,6 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .whatsapp-notification {
-            background: #f0fdf4;
-            border: 2px solid #25d366;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .whatsapp-notification h4 {
-            color: #128C7E;
-            margin-bottom: 10px;
-        }
-
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -543,6 +596,15 @@
     <div class="container">
         <h1>🏪 <span>Sistema de Inventario y Ventas Múltiples</span></h1>
 
+        <!-- ========== ALERTA FIJA DE STOCK ========== -->
+        <div id="alerta-stock-fija" class="alerta-stock-fija">
+            <h3>🚨 ¡ALERTA DE STOCK CRÍTICO!</h3>
+            <div id="alerta-stock-contenido" class="alerta-items"></div>
+            <div style="margin-top: 10px; text-align: right;">
+                <small style="color: #856404;">⚠️ Estas alertas permanecerán visibles hasta que el stock sea repuesto.</small>
+            </div>
+        </div>
+
         <div id="mensaje" class="mensaje"></div>
 
         <div class="menu">
@@ -555,7 +617,6 @@
             <button class="btn-warning" onclick="mostrarPanel('stockbajo')">⚠️ Stock Bajo</button>
             <button class="btn-ventas" onclick="mostrarPanel('ventas')">💰 Ventas</button>
             <button class="btn-diarias" onclick="mostrarPanel('diarias')">📅 Ventas Diarias</button>
-            <button class="btn-whatsapp" onclick="mostrarPanel('whatsapp')">📱 WhatsApp</button>
         </div>
 
         <!-- Panel: Agregar Producto -->
@@ -655,9 +716,6 @@
                 <input type="number" id="stock-limite" value="5" min="1">
             </div>
             <button class="btn-primary" onclick="verStockBajo()">🔍 Buscar</button>
-            <button class="btn-whatsapp" onclick="enviarNotificacionWhatsApp()" style="margin-left:10px;">
-                📱 Enviar Alerta por WhatsApp
-            </button>
             <div id="stock-resultado" style="margin-top: 20px;"></div>
         </div>
 
@@ -719,27 +777,6 @@
             <div id="ventas-diarias-container" class="scroll"></div>
         </div>
 
-        <!-- Panel: WhatsApp -->
-        <div id="panel-whatsapp" class="panel">
-            <h2>📱 Configuración de Notificaciones WhatsApp</h2>
-            
-            <div class="whatsapp-notification">
-                <h4>📱 Número de WhatsApp para alertas</h4>
-                <div class="form-group">
-                    <label>Número de teléfono (con código de país, sin +)</label>
-                    <input type="text" id="whatsapp-numero" value="1167982466" placeholder="Ej: 5491167982466">
-                    <small style="color:#666;">Formato: código de país + número (ej: 5491167982466 para Argentina)</small>
-                </div>
-                <button class="btn-whatsapp" onclick="guardarNumeroWhatsApp()">💾 Guardar Número</button>
-                <button class="btn-whatsapp" onclick="enviarNotificacionWhatsApp()" style="margin-left:10px;">📨 Enviar Alerta de Prueba</button>
-            </div>
-
-            <div style="margin-top:20px;">
-                <h3>📋 Productos con alertas activas</h3>
-                <div id="whatsapp-alertas" style="margin-top:10px;"></div>
-            </div>
-        </div>
-
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 0.9em;">
             💾 Los datos se guardan automáticamente en tu navegador
         </div>
@@ -753,12 +790,10 @@
             constructor() {
                 this.archivo = 'inventario_completo';
                 this.archivoVentas = 'ventas_diarias';
-                this.archivoConfig = 'config_whatsapp';
                 this.inventario = this.cargarDatos(this.archivo, {});
                 this.ventas = this.cargarDatos(this.archivoVentas, {});
-                this.config = this.cargarDatos(this.archivoConfig, { numeroWhatsApp: '1167982466' });
                 this.carrito = [];
-                this.alertasEnviadas = new Set();
+                this.limiteStock = 5;
             }
 
             cargarDatos(archivo, defaultValor) {
@@ -776,9 +811,8 @@
             guardarDatos() {
                 localStorage.setItem(this.archivo, JSON.stringify(this.inventario));
                 localStorage.setItem(this.archivoVentas, JSON.stringify(this.ventas));
-                localStorage.setItem(this.archivoConfig, JSON.stringify(this.config));
                 this.actualizarEstadisticas();
-                this.verificarAlertasStock();
+                this.actualizarAlertaStockFija();
             }
 
             // ========== PRODUCTOS ==========
@@ -920,7 +954,6 @@
                     return false;
                 }
 
-                // Buscar el producto
                 let productoEncontrado = null;
                 let rubroEncontrado = null;
 
@@ -942,7 +975,6 @@
                     return false;
                 }
 
-                // Verificar si ya está en el carrito
                 const existente = this.carrito.find(item => item.producto === nombre);
                 if (existente) {
                     if (existente.cantidad + cantidad > productoEncontrado.cantidad) {
@@ -1015,7 +1047,6 @@
                     return false;
                 }
 
-                // Verificar stock de todos los productos
                 for (let item of this.carrito) {
                     let encontrado = false;
                     for (let rubro in this.inventario) {
@@ -1034,7 +1065,6 @@
                     }
                 }
 
-                // Registrar la venta completa
                 const hoy = new Date();
                 const fechaKey = hoy.toISOString().split('T')[0];
                 const hora = hoy.toLocaleTimeString();
@@ -1044,7 +1074,6 @@
                     this.ventas[fechaKey] = [];
                 }
 
-                // Guardar la venta con todos los productos
                 this.ventas[fechaKey].push({
                     productos: this.carrito.map(item => ({
                         producto: item.producto,
@@ -1057,12 +1086,10 @@
                     items: this.carrito.length
                 });
 
-                // Descontar stock
                 for (let item of this.carrito) {
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
                             this.inventario[rubro][item.producto].cantidad -= item.cantidad;
-                            // Eliminar si queda en 0
                             if (this.inventario[rubro][item.producto].cantidad === 0) {
                                 delete this.inventario[rubro][item.producto];
                                 if (Object.keys(this.inventario[rubro]).length === 0) {
@@ -1083,17 +1110,12 @@
 
                 mostrarMensaje(`💰 Venta realizada: ${detalles} - Total: $${totalVenta.toFixed(2)}`, 'exito');
                 
-                // Mostrar detalle de la venta
                 this.mostrarDetalleVentaMultiple(this.carrito, totalVenta);
                 
-                // Vaciar carrito
                 this.carrito = [];
                 this.actualizarCarritoUI();
                 this.actualizarEstadisticas();
                 actualizarListado();
-
-                // Verificar alertas de stock bajo
-                this.verificarAlertasStock();
 
                 return true;
             }
@@ -1127,6 +1149,70 @@
                 `;
 
                 container.innerHTML = html;
+            }
+
+            // ========== ALERTA FIJA DE STOCK ==========
+            getProductosCriticos(limite = 5) {
+                const criticos = [];
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad < limite) {
+                            criticos.push({
+                                producto: producto,
+                                rubro: rubro,
+                                cantidad: data.cantidad,
+                                precio: data.precio,
+                                estado: data.cantidad === 0 ? 'SIN STOCK' : 'STOCK BAJO'
+                            });
+                        }
+                    }
+                }
+                return criticos;
+            }
+
+            actualizarAlertaStockFija() {
+                const alertaContainer = document.getElementById('alerta-stock-fija');
+                const contenido = document.getElementById('alerta-stock-contenido');
+                const criticos = this.getProductosCriticos(this.limiteStock);
+
+                if (criticos.length === 0) {
+                    alertaContainer.classList.remove('activa');
+                    return;
+                }
+
+                alertaContainer.classList.add('activa');
+                let html = '';
+
+                for (let item of criticos) {
+                    const claseEstado = item.cantidad === 0 ? 'sin-stock' : 'stock-bajo';
+                    const textoEstado = item.cantidad === 0 ? '🚫 SIN STOCK' : '⚠️ STOCK BAJO';
+                    html += `
+                        <div class="alerta-item ${claseEstado}">
+                            <span class="producto-nombre">${item.producto}</span>
+                            <span style="color:#666;">(${item.rubro})</span>
+                            <span class="producto-stock ${claseEstado}">${textoEstado}: ${item.cantidad} unidades</span>
+                            <span style="color:#28a745; font-weight:600;">$${item.precio.toFixed(2)} c/u</span>
+                            <button class="btn-resolver" onclick="sistema.resolverAlerta('${item.producto}', '${item.rubro}')">
+                                ✅ Resolver
+                            </button>
+                        </div>
+                    `;
+                }
+
+                contenido.innerHTML = html;
+            }
+
+            resolverAlerta(producto, rubro) {
+                // Este método se llama cuando el usuario hace clic en "Resolver"
+                // Simplemente redirige al panel de modificar para que agregue stock
+                mostrarMensaje(`📦 Para resolver la alerta de '${producto}', ve al panel MODIFICAR y aumenta el stock.`, 'info');
+                document.getElementById('modificar-nombre').value = producto;
+                document.getElementById('modificar-rubro').value = rubro;
+                mostrarPanel('modificar');
+                
+                // Enfocar el campo de cantidad
+                document.getElementById('modificar-cantidad').focus();
             }
 
             // ========== LISTADOS ==========
@@ -1166,7 +1252,7 @@
                         const data = productos[producto];
                         let estado = '';
                         if (data.cantidad === 0) estado = 'sin-stock';
-                        else if (data.cantidad < 5) estado = 'bajo-stock';
+                        else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
                         html += `
                             <div class="producto-item">
                                 <span class="producto-nombre">${producto}</span>
@@ -1203,7 +1289,7 @@
                     const data = productos[producto];
                     let estado = '';
                     if (data.cantidad === 0) estado = 'sin-stock';
-                    else if (data.cantidad < 5) estado = 'bajo-stock';
+                    else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
                     html += `
                         <div class="producto-item">
                             <span class="producto-nombre">${producto}</span>
@@ -1231,7 +1317,7 @@
                         const data = this.inventario[rubro][nombre];
                         let estado = '';
                         if (data.cantidad === 0) estado = 'sin-stock';
-                        else if (data.cantidad < 5) estado = 'bajo-stock';
+                        else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
                         html += `
                             <div class="rubro-card">
                                 <h3>✅ Producto encontrado</h3>
@@ -1262,11 +1348,11 @@
                     for (let producto in this.inventario[rubro]) {
                         const data = this.inventario[rubro][producto];
                         if (data.cantidad < limite) {
-                            const estado = data.cantidad === 0 ? 'SIN STOCK' : 'STOCK BAJO';
+                            const estado = data.cantidad === 0 ? '🚫 SIN STOCK' : '⚠️ STOCK BAJO';
                             html += `
-                                <div class="stock-bajo-item" style="display:flex; justify-content:space-between; padding:10px; background:${data.cantidad === 0 ? '#fff0f0' : '#fff3f3'}; border-radius:8px; margin-bottom:8px; border-left:4px solid ${data.cantidad === 0 ? '#dc3545' : '#f5576c'};">
-                                    <span>${data.cantidad === 0 ? '🚫' : '⚠️'} ${producto} <small style="color:#666;">(${rubro})</small></span>
-                                    <span style="font-weight:600; color:${data.cantidad === 0 ? '#dc3545' : '#f5576c'};">${data.cantidad} unidades - $${data.precio.toFixed(2)} c/u</span>
+                                <div class="stock-bajo-item" style="display:flex; justify-content:space-between; padding:10px; background:${data.cantidad === 0 ? '#fff0f0' : '#fff3f3'}; border-radius:8px; margin-bottom:8px; border-left:4px solid ${data.cantidad === 0 ? '#dc3545' : '#ffc107'};">
+                                    <span>${data.cantidad === 0 ? '🚫' : '⚠️'} <strong>${producto}</strong> <small style="color:#666;">(${rubro})</small></span>
+                                    <span style="font-weight:600; color:${data.cantidad === 0 ? '#dc3545' : '#856404'};">${data.cantidad} unidades - $${data.precio.toFixed(2)} c/u</span>
                                 </div>
                             `;
                             encontrados = true;
@@ -1279,90 +1365,6 @@
                 }
 
                 return html;
-            }
-
-            // ========== ALERTAS DE STOCK Y WHATSAPP ==========
-            getProductosCriticos(limite = 5) {
-                const criticos = [];
-                for (let rubro in this.inventario) {
-                    for (let producto in this.inventario[rubro]) {
-                        const data = this.inventario[rubro][producto];
-                        if (data.cantidad < limite) {
-                            criticos.push({
-                                producto: producto,
-                                rubro: rubro,
-                                cantidad: data.cantidad,
-                                precio: data.precio,
-                                estado: data.cantidad === 0 ? 'SIN STOCK' : 'STOCK BAJO'
-                            });
-                        }
-                    }
-                }
-                return criticos;
-            }
-
-            verificarAlertasStock() {
-                const criticos = this.getProductosCriticos(5);
-                const alertasContainer = document.getElementById('whatsapp-alertas');
-                
-                if (criticos.length === 0) {
-                    alertasContainer.innerHTML = '<div class="vacio">✅ No hay productos con alertas activas.</div>';
-                    return;
-                }
-
-                let html = '';
-                for (let item of criticos) {
-                    const id = `${item.producto}-${item.rubro}`;
-                    html += `
-                        <div class="stock-bajo-item" style="display:flex; justify-content:space-between; padding:10px; background:${item.cantidad === 0 ? '#fff0f0' : '#fff3f3'}; border-radius:8px; margin-bottom:8px; border-left:4px solid ${item.cantidad === 0 ? '#dc3545' : '#f5576c'};">
-                            <span>${item.cantidad === 0 ? '🚫' : '⚠️'} <strong>${item.producto}</strong> (${item.rubro})</span>
-                            <span style="font-weight:600; color:${item.cantidad === 0 ? '#dc3545' : '#f5576c'};">${item.cantidad} unidades</span>
-                        </div>
-                    `;
-                }
-                alertasContainer.innerHTML = html;
-            }
-
-            enviarNotificacionWhatsApp() {
-                const numero = this.config.numeroWhatsApp || document.getElementById('whatsapp-numero').value || '1167982466';
-                const criticos = this.getProductosCriticos(5);
-
-                if (criticos.length === 0) {
-                    mostrarMensaje('✅ No hay productos con stock bajo. No se envía notificación.', 'exito');
-                    return false;
-                }
-
-                let mensaje = '🚨 *ALERTA DE STOCK BAJO* 🚨\n\n';
-                mensaje += 'Los siguientes productos necesitan reposición:\n\n';
-
-                for (let item of criticos) {
-                    mensaje += `📦 *${item.producto}*\n`;
-                    mensaje += `   📌 Rubro: ${item.rubro}\n`;
-                    mensaje += `   📊 Stock: ${item.cantidad} unidades\n`;
-                    mensaje += `   💰 Precio: $${item.precio.toFixed(2)}\n`;
-                    mensaje += `   ⚠️ Estado: ${item.estado}\n\n`;
-                }
-
-                mensaje += `📅 Fecha: ${new Date().toLocaleDateString()}\n`;
-                mensaje += `🕐 Hora: ${new Date().toLocaleTimeString()}`;
-
-                // Codificar el mensaje para URL
-                const mensajeCodificado = encodeURIComponent(mensaje);
-                const url = `https://wa.me/${numero}?text=${mensajeCodificado}`;
-
-                // Abrir WhatsApp en una nueva ventana
-                window.open(url, '_blank');
-
-                mostrarMensaje(`📱 Notificación enviada por WhatsApp al ${numero}`, 'whatsapp');
-                return true;
-            }
-
-            guardarNumeroWhatsApp(numero) {
-                if (numero) {
-                    this.config.numeroWhatsApp = numero.trim();
-                    this.guardarDatos();
-                    mostrarMensaje(`✅ Número de WhatsApp guardado: ${numero}`, 'exito');
-                }
             }
 
             // ========== VENTAS DIARIAS ==========
@@ -1524,9 +1526,6 @@
                 cargarVentasDiarias();
             } else if (panel === 'stockbajo') {
                 verStockBajo();
-            } else if (panel === 'whatsapp') {
-                document.getElementById('whatsapp-numero').value = sistema.config.numeroWhatsApp || '1167982466';
-                sistema.verificarAlertasStock();
             }
         }
 
@@ -1547,7 +1546,7 @@
                 document.getElementById('agregar-cantidad').value = '';
                 document.getElementById('agregar-precio').value = '';
                 document.getElementById('agregar-rubro').value = '';
-                sistema.verificarAlertasStock();
+                sistema.actualizarAlertaStockFija();
             }
         }
 
@@ -1558,7 +1557,7 @@
             if (sistema.eliminarProducto(nombre, rubro)) {
                 document.getElementById('eliminar-nombre').value = '';
                 document.getElementById('eliminar-rubro').value = '';
-                sistema.verificarAlertasStock();
+                sistema.actualizarAlertaStockFija();
             }
         }
 
@@ -1573,7 +1572,7 @@
                 document.getElementById('modificar-cantidad').value = '';
                 document.getElementById('modificar-precio').value = '';
                 document.getElementById('modificar-rubro').value = '';
-                sistema.verificarAlertasStock();
+                sistema.actualizarAlertaStockFija();
             }
         }
 
@@ -1612,6 +1611,7 @@
 
         function finalizarVenta() {
             sistema.finalizarVenta();
+            sistema.actualizarAlertaStockFija();
         }
 
         function cargarVentasDiarias() {
@@ -1624,27 +1624,13 @@
             cargarVentasDiarias();
         }
 
-        function enviarNotificacionWhatsApp() {
-            sistema.enviarNotificacionWhatsApp();
-        }
-
-        function guardarNumeroWhatsApp() {
-            const numero = document.getElementById('whatsapp-numero').value;
-            sistema.guardarNumeroWhatsApp(numero);
-        }
-
         // ========== INICIALIZACIÓN ==========
         window.onload = function() {
             mostrarPanel('listar');
             sistema.actualizarSelectVentas();
             sistema.actualizarEstadisticas();
             sistema.actualizarCarritoUI();
-            sistema.verificarAlertasStock();
-            
-            // Cargar número de WhatsApp guardado
-            if (sistema.config.numeroWhatsApp) {
-                document.getElementById('whatsapp-numero').value = sistema.config.numeroWhatsApp;
-            }
+            sistema.actualizarAlertaStockFija();
 
             // Enter en los inputs
             document.addEventListener('keypress', function(e) {
@@ -1663,17 +1649,9 @@
                 }
             });
 
-            // Verificar alertas cada 30 segundos
+            // Verificar alertas cada 30 segundos (solo actualiza, no molesta)
             setInterval(() => {
-                sistema.verificarAlertasStock();
-                const criticos = sistema.getProductosCriticos(5);
-                if (criticos.length > 0) {
-                    // Si hay productos críticos, mostrar un mensaje sutil
-                    const mensaje = document.getElementById('mensaje');
-                    if (!mensaje.classList.contains('error')) {
-                        mostrarMensaje(`⚠️ Hay ${criticos.length} productos con stock bajo. Revise el panel de stock.`, 'info');
-                    }
-                }
+                sistema.actualizarAlertaStockFija();
             }, 30000);
         };
     </script>
