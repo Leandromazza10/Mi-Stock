@@ -1286,16 +1286,12 @@
                     items: this.carrito.length
                 });
 
+                // IMPORTANTE: NO ELIMINAMOS EL PRODUCTO, SOLO ACTUALIZAMOS LA CANTIDAD
                 for (let item of this.carrito) {
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
                             this.inventario[rubro][item.producto].cantidad -= item.cantidad;
-                            if (this.inventario[rubro][item.producto].cantidad === 0) {
-                                delete this.inventario[rubro][item.producto];
-                                if (Object.keys(this.inventario[rubro]).length === 0) {
-                                    delete this.inventario[rubro];
-                                }
-                            }
+                            // El producto se queda con 0, no se elimina
                             break;
                         }
                     }
