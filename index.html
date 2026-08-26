@@ -40,57 +40,56 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* ========== CARTEL FIJO DE ALERTA ========== */
-        .alerta-fija {
-            background: #dc3545;
-            color: white;
+        /* ========== CARTEL DE ALERTA AMARILLO ========== */
+        .alerta-amarilla {
+            background: #fff3cd;
+            border: 4px solid #ffc107;
             border-radius: 15px;
             padding: 20px 25px;
             margin-bottom: 20px;
             display: none;
             animation: slideDown 0.5s ease;
-            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.5);
-            border: 3px solid #ff6b6b;
+            box-shadow: 0 4px 20px rgba(255, 193, 7, 0.5);
             position: relative;
         }
 
-        .alerta-fija.activa {
+        .alerta-amarilla.activa {
             display: block;
         }
 
-        .alerta-fija .header-alerta {
+        .alerta-amarilla .header-alerta {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 10px;
         }
 
-        .alerta-fija .header-alerta .icono {
+        .alerta-amarilla .header-alerta .icono {
             font-size: 2.5em;
-            animation: parpadeo 0.8s infinite;
+            animation: parpadeo 1s infinite;
         }
 
         @keyframes parpadeo {
             0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
         }
 
-        .alerta-fija .header-alerta h2 {
+        .alerta-amarilla .header-alerta h2 {
             font-size: 1.8em;
             margin: 0;
-            color: white;
+            color: #856404;
         }
 
-        .alerta-fija .header-alerta .badge {
-            background: white;
-            color: #dc3545;
+        .alerta-amarilla .header-alerta .badge {
+            background: #dc3545;
+            color: white;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 1.1em;
         }
 
-        .alerta-fija .lista-productos {
+        .alerta-amarilla .lista-productos {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 10px;
@@ -99,30 +98,31 @@
             overflow-y: auto;
         }
 
-        .alerta-fija .item-alerta {
-            background: rgba(255,255,255,0.15);
+        .alerta-amarilla .item-alerta {
+            background: rgba(255, 255, 255, 0.8);
             padding: 12px 18px;
             border-radius: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 4px solid #ff6b6b;
-            backdrop-filter: blur(5px);
+            border-left: 4px solid #dc3545;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .alerta-fija .item-alerta .nombre-producto {
+        .alerta-amarilla .item-alerta .nombre-producto {
             font-weight: 700;
+            color: #333;
             font-size: 1.1em;
         }
 
-        .alerta-fija .item-alerta .detalle-producto {
+        .alerta-amarilla .item-alerta .detalle-producto {
             font-size: 0.9em;
-            opacity: 0.9;
+            color: #666;
         }
 
-        .alerta-fija .item-alerta .btn-reponer {
-            background: white;
-            color: #dc3545;
+        .alerta-amarilla .item-alerta .btn-reponer {
+            background: #28a745;
+            color: white;
             border: none;
             padding: 6px 18px;
             border-radius: 8px;
@@ -132,13 +132,13 @@
             font-size: 0.9em;
         }
 
-        .alerta-fija .item-alerta .btn-reponer:hover {
+        .alerta-amarilla .item-alerta .btn-reponer:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .alerta-fija .sin-alertas {
-            color: white;
+        .alerta-amarilla .sin-alertas {
+            color: #856404;
             text-align: center;
             padding: 20px;
             font-size: 1.2em;
@@ -748,11 +748,11 @@
                 font-size: 1.8em;
             }
 
-            .alerta-fija .lista-productos {
+            .alerta-amarilla .lista-productos {
                 grid-template-columns: 1fr;
             }
 
-            .alerta-fija .header-alerta h2 {
+            .alerta-amarilla .header-alerta h2 {
                 font-size: 1.3em;
             }
         }
@@ -762,13 +762,13 @@
     <div class="container">
         <h1>🏪 <span>Sistema de Inventario y Ventas</span></h1>
 
-        <!-- ========== CARTEL FIJO DE ALERTA ========== -->
-        <div id="alerta-fija" class="alerta-fija">
+        <!-- ========== CARTEL DE ALERTA AMARILLO ========== -->
+        <div id="alerta-amarilla" class="alerta-amarilla">
             <div class="header-alerta">
-                <span class="icono">🚨</span>
-                <h2>¡STOCK CRÍTICO!</h2>
+                <span class="icono">⚠️</span>
+                <h2>¡PRODUCTO AGOTADO!</h2>
                 <span class="badge" id="contador-alerta">0</span>
-                <span style="margin-left:auto; font-weight:600; font-size:1.1em;">⚠️ Reponer urgentemente</span>
+                <span style="margin-left:auto; font-weight:600; font-size:1.1em; color:#856404;">🔴 Reponer urgentemente</span>
             </div>
             <div id="lista-alerta" class="lista-productos"></div>
         </div>
@@ -1011,7 +1011,7 @@
                 localStorage.setItem(this.archivo, JSON.stringify(this.inventario));
                 localStorage.setItem(this.archivoVentas, JSON.stringify(this.ventas));
                 this.actualizarEstadisticas();
-                this.actualizarAlertaFija();
+                this.actualizarAlertaAmarilla();
                 this.actualizarIndicadorStock();
             }
 
@@ -1351,19 +1351,35 @@
                 container.innerHTML = html;
             }
 
-            // ========== ALERTA FIJA ==========
+            // ========== ALERTA AMARILLA ==========
+            getProductosAgotados() {
+                const agotados = [];
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad === 0) {
+                            agotados.push({
+                                producto: producto,
+                                rubro: rubro,
+                                precio: data.precio
+                            });
+                        }
+                    }
+                }
+                return agotados;
+            }
+
             getProductosCriticos() {
                 const criticos = [];
                 for (let rubro in this.inventario) {
                     for (let producto in this.inventario[rubro]) {
                         const data = this.inventario[rubro][producto];
-                        if (data.cantidad < this.limiteStock) {
+                        if (data.cantidad > 0 && data.cantidad < this.limiteStock) {
                             criticos.push({
                                 producto: producto,
                                 rubro: rubro,
                                 cantidad: data.cantidad,
-                                precio: data.precio,
-                                estado: data.cantidad === 0 ? 'AGOTADO' : 'STOCK BAJO'
+                                precio: data.precio
                             });
                         }
                     }
@@ -1371,34 +1387,33 @@
                 return criticos;
             }
 
-            actualizarAlertaFija() {
-                const alerta = document.getElementById('alerta-fija');
+            actualizarAlertaAmarilla() {
+                const alerta = document.getElementById('alerta-amarilla');
                 const lista = document.getElementById('lista-alerta');
                 const contador = document.getElementById('contador-alerta');
-                const criticos = this.getProductosCriticos();
+                const agotados = this.getProductosAgotados();
 
-                if (criticos.length === 0) {
+                if (agotados.length === 0) {
                     alerta.classList.remove('activa');
                     return;
                 }
 
                 alerta.classList.add('activa');
-                contador.textContent = criticos.length;
+                contador.textContent = agotados.length;
 
                 let html = '';
-                for (let item of criticos) {
-                    const icono = item.cantidad === 0 ? '🚫' : '⚠️';
+                for (let item of agotados) {
                     html += `
                         <div class="item-alerta">
                             <div>
-                                <span class="nombre-producto">${icono} ${item.producto}</span>
+                                <span class="nombre-producto">🚫 ${item.producto}</span>
                                 <span class="detalle-producto">(${item.rubro})</span>
-                                <span style="font-weight:700; margin-left:10px; color:#ff6b6b;">
-                                    ${item.cantidad} unidades
+                                <span style="font-weight:700; margin-left:10px; color:#dc3545;">
+                                    ¡AGOTADO!
                                 </span>
                             </div>
                             <div>
-                                <span style="font-weight:600; margin-right:10px;">$${item.precio.toFixed(2)}</span>
+                                <span style="font-weight:600; margin-right:10px; color:#28a745;">$${item.precio.toFixed(2)}</span>
                                 <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
                                     ✅ Reponer
                                 </button>
@@ -1422,9 +1437,11 @@
             actualizarIndicadorStock() {
                 const btn = document.getElementById('btn-stock-bajo');
                 const indicador = document.getElementById('indicador-stock');
+                const agotados = this.getProductosAgotados();
                 const criticos = this.getProductosCriticos();
+                const totalCriticos = agotados.length + criticos.length;
 
-                if (criticos.length === 0) {
+                if (totalCriticos === 0) {
                     btn.classList.remove('titilante');
                     indicador.style.display = 'none';
                     return;
@@ -1432,12 +1449,11 @@
 
                 btn.classList.add('titilante');
                 indicador.style.display = 'inline-flex';
-                indicador.textContent = criticos.length;
+                indicador.textContent = totalCriticos;
 
-                // Cambiar el título del panel si está visible
                 const tituloPanel = document.getElementById('titulo-stock-bajo');
                 if (tituloPanel) {
-                    tituloPanel.textContent = `⚠️ Productos con Stock Crítico (${criticos.length})`;
+                    tituloPanel.textContent = `⚠️ Productos con Stock Crítico (${totalCriticos})`;
                 }
             }
 
@@ -1566,25 +1582,27 @@
             }
 
             // ========== STOCK ==========
-            listarStockBajo(limite = 5) {
-                limite = parseInt(limite) || 5;
+            listarStockCritico() {
+                const agotados = this.getProductosAgotados();
                 const criticos = this.getProductosCriticos();
+                const todos = [...agotados.map(a => ({...a, cantidad: 0, tipo: 'agotado'})), ...criticos.map(c => ({...c, tipo: 'critico'}))];
                 
-                if (criticos.length === 0) {
+                if (todos.length === 0) {
                     return '<div class="vacio">✅ No hay productos con stock crítico.</div>';
                 }
 
                 let html = '';
-                for (let item of criticos) {
+                for (let item of todos) {
                     const icono = item.cantidad === 0 ? '🚫' : '⚠️';
                     const color = item.cantidad === 0 ? '#dc3545' : '#ffc107';
+                    const texto = item.cantidad === 0 ? 'AGOTADO' : `${item.cantidad} unidades`;
                     html += `
                         <div class="stock-item" style="border-left-color: ${color};">
                             <div class="producto-info">
                                 <div class="nombre">${icono} ${item.producto}</div>
                                 <div class="detalle">Rubro: ${item.rubro} | Precio: $${item.precio.toFixed(2)}</div>
                             </div>
-                            <div class="stock-cantidad" style="color: ${color};">${item.cantidad} unidades</div>
+                            <div class="stock-cantidad" style="color: ${color};">${texto}</div>
                             <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
                                 ✅ Reponer
                             </button>
@@ -1935,7 +1953,7 @@
         function verStockBajo() {
             const limite = document.getElementById('stock-limite').value;
             const container = document.getElementById('stock-resultado');
-            container.innerHTML = sistema.listarStockBajo(limite);
+            container.innerHTML = sistema.listarStockCritico();
         }
 
         function agregarAlCarrito() {
@@ -1982,7 +2000,7 @@
             sistema.actualizarSelectVentas();
             sistema.actualizarEstadisticas();
             sistema.actualizarCarritoUI();
-            sistema.actualizarAlertaFija();
+            sistema.actualizarAlertaAmarilla();
             sistema.actualizarIndicadorStock();
 
             document.addEventListener('keypress', function(e) {
@@ -2002,7 +2020,7 @@
             });
 
             setInterval(() => {
-                sistema.actualizarAlertaFija();
+                sistema.actualizarAlertaAmarilla();
                 sistema.actualizarIndicadorStock();
             }, 30000);
         };
