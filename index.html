@@ -40,56 +40,64 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* ========== CARTEL DE ALERTA AMARILLO ========== */
-        .alerta-amarilla {
-            background: #fff3cd;
-            border: 4px solid #ffc107;
+        /* ========== CARTEL DE ALERTA ROJO ========== */
+        .alerta-roja {
+            background: #dc3545;
+            border: 4px solid #ff6b6b;
             border-radius: 15px;
             padding: 20px 25px;
             margin-bottom: 20px;
             display: none;
             animation: slideDown 0.5s ease;
-            box-shadow: 0 4px 20px rgba(255, 193, 7, 0.5);
+            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.6);
             position: relative;
         }
 
-        .alerta-amarilla.activa {
+        .alerta-roja.activa {
             display: block;
         }
 
-        .alerta-amarilla .header-alerta {
+        .alerta-roja .header-alerta {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 10px;
         }
 
-        .alerta-amarilla .header-alerta .icono {
+        .alerta-roja .header-alerta .icono {
             font-size: 2.5em;
-            animation: parpadeo 1s infinite;
+            animation: parpadeo 0.8s infinite;
         }
 
         @keyframes parpadeo {
             0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.1); }
+            50% { opacity: 0.4; transform: scale(1.1); }
         }
 
-        .alerta-amarilla .header-alerta h2 {
+        .alerta-roja .header-alerta h2 {
             font-size: 1.8em;
             margin: 0;
-            color: #856404;
+            color: white;
         }
 
-        .alerta-amarilla .header-alerta .badge {
-            background: #dc3545;
-            color: white;
+        .alerta-roja .header-alerta .badge {
+            background: white;
+            color: #dc3545;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 1.1em;
         }
 
-        .alerta-amarilla .lista-productos {
+        .alerta-roja .header-alerta .urgente {
+            margin-left: auto;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #ffd700;
+            animation: parpadeo 1s infinite;
+        }
+
+        .alerta-roja .lista-productos {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 10px;
@@ -98,31 +106,50 @@
             overflow-y: auto;
         }
 
-        .alerta-amarilla .item-alerta {
-            background: rgba(255, 255, 255, 0.8);
+        .alerta-roja .lista-productos::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .alerta-roja .lista-productos::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+
+        .alerta-roja .lista-productos::-webkit-scrollbar-thumb {
+            background: white;
+            border-radius: 10px;
+        }
+
+        .alerta-roja .item-alerta {
+            background: rgba(255, 255, 255, 0.15);
             padding: 12px 18px;
             border-radius: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 4px solid #dc3545;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #ffd700;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
         }
 
-        .alerta-amarilla .item-alerta .nombre-producto {
+        .alerta-roja .item-alerta:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .alerta-roja .item-alerta .nombre-producto {
             font-weight: 700;
-            color: #333;
+            color: white;
             font-size: 1.1em;
         }
 
-        .alerta-amarilla .item-alerta .detalle-producto {
+        .alerta-roja .item-alerta .detalle-producto {
             font-size: 0.9em;
-            color: #666;
+            color: #ffd700;
         }
 
-        .alerta-amarilla .item-alerta .btn-reponer {
-            background: #28a745;
-            color: white;
+        .alerta-roja .item-alerta .btn-reponer {
+            background: white;
+            color: #dc3545;
             border: none;
             padding: 6px 18px;
             border-radius: 8px;
@@ -132,13 +159,15 @@
             font-size: 0.9em;
         }
 
-        .alerta-amarilla .item-alerta .btn-reponer:hover {
+        .alerta-roja .item-alerta .btn-reponer:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: #28a745;
+            color: white;
         }
 
-        .alerta-amarilla .sin-alertas {
-            color: #856404;
+        .alerta-roja .sin-alertas {
+            color: white;
             text-align: center;
             padding: 20px;
             font-size: 1.2em;
@@ -748,11 +777,11 @@
                 font-size: 1.8em;
             }
 
-            .alerta-amarilla .lista-productos {
+            .alerta-roja .lista-productos {
                 grid-template-columns: 1fr;
             }
 
-            .alerta-amarilla .header-alerta h2 {
+            .alerta-roja .header-alerta h2 {
                 font-size: 1.3em;
             }
         }
@@ -762,13 +791,13 @@
     <div class="container">
         <h1>🏪 <span>Sistema de Inventario y Ventas</span></h1>
 
-        <!-- ========== CARTEL DE ALERTA AMARILLO ========== -->
-        <div id="alerta-amarilla" class="alerta-amarilla">
+        <!-- ========== CARTEL DE ALERTA ROJO ========== -->
+        <div id="alerta-roja" class="alerta-roja">
             <div class="header-alerta">
-                <span class="icono">⚠️</span>
+                <span class="icono">🚨</span>
                 <h2>¡PRODUCTO AGOTADO!</h2>
                 <span class="badge" id="contador-alerta">0</span>
-                <span style="margin-left:auto; font-weight:600; font-size:1.1em; color:#856404;">🔴 Reponer urgentemente</span>
+                <span class="urgente">⚠️ URGENTE - REPONER STOCK</span>
             </div>
             <div id="lista-alerta" class="lista-productos"></div>
         </div>
@@ -1011,7 +1040,7 @@
                 localStorage.setItem(this.archivo, JSON.stringify(this.inventario));
                 localStorage.setItem(this.archivoVentas, JSON.stringify(this.ventas));
                 this.actualizarEstadisticas();
-                this.actualizarAlertaAmarilla();
+                this.actualizarAlertaRoja();
                 this.actualizarIndicadorStock();
             }
 
@@ -1347,7 +1376,7 @@
                 container.innerHTML = html;
             }
 
-            // ========== ALERTA AMARILLA ==========
+            // ========== ALERTA ROJA ==========
             getProductosAgotados() {
                 const agotados = [];
                 for (let rubro in this.inventario) {
@@ -1383,8 +1412,8 @@
                 return criticos;
             }
 
-            actualizarAlertaAmarilla() {
-                const alerta = document.getElementById('alerta-amarilla');
+            actualizarAlertaRoja() {
+                const alerta = document.getElementById('alerta-roja');
                 const lista = document.getElementById('lista-alerta');
                 const contador = document.getElementById('contador-alerta');
                 const agotados = this.getProductosAgotados();
@@ -1404,12 +1433,12 @@
                             <div>
                                 <span class="nombre-producto">🚫 ${item.producto}</span>
                                 <span class="detalle-producto">(${item.rubro})</span>
-                                <span style="font-weight:700; margin-left:10px; color:#dc3545;">
+                                <span style="font-weight:700; margin-left:10px; color:#ffd700;">
                                     ¡AGOTADO!
                                 </span>
                             </div>
                             <div>
-                                <span style="font-weight:600; margin-right:10px; color:#28a745;">$${item.precio.toFixed(2)}</span>
+                                <span style="font-weight:600; margin-right:10px; color:#ffd700;">$${item.precio.toFixed(2)}</span>
                                 <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
                                     ✅ Reponer
                                 </button>
@@ -1996,7 +2025,7 @@
             sistema.actualizarSelectVentas();
             sistema.actualizarEstadisticas();
             sistema.actualizarCarritoUI();
-            sistema.actualizarAlertaAmarilla();
+            sistema.actualizarAlertaRoja();
             sistema.actualizarIndicadorStock();
 
             document.addEventListener('keypress', function(e) {
@@ -2016,7 +2045,7 @@
             });
 
             setInterval(() => {
-                sistema.actualizarAlertaAmarilla();
+                sistema.actualizarAlertaRoja();
                 sistema.actualizarIndicadorStock();
             }, 30000);
         };
