@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏪 Sistema de Inventario y Ventas - Supabase</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; text-align: center; margin-bottom: 20px; font-size: 2.5em; }
+        h1 span {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .estado-conexion {
+            text-align: center; padding: 10px; border-radius: 10px;
+            margin-bottom: 20px; font-weight: 600; font-size: 0.95em;
+        }
+        .estado-conexion.conectado { background: #d4edda; color: #155724; }
+        .estado-conexion.desconectado { background: #f8d7da; color: #721c24; }
+        .estado-conexion.cargando { background: #fff3cd; color: #856404; }
+
+        /* ALERTA ROJA */
+        .alerta-roja {
+            background: #dc3545; border: 4px solid #ff6b6b; border-radius: 15px;
+            padding: 20px 25px; margin-bottom: 20px; display: none;
+            animation: slideDown 0.5s ease;
+            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.6);
+        }
+        .alerta-roja.activa { display: block; }
+        .alerta-roja .header-alerta {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 10px;
+        }
+        .alerta-roja .header-alerta .icono { font-size: 2.5em; animation: parpadeo 0.8s infinite; }
+        @keyframes parpadeo {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.1); }
+        }
+        .alerta-roja .header-alerta h2 { font-size: 1.8em; margin: 0; color: white; }
+        .alerta-roja .header-alerta .badge {
+            background: white; color: #dc3545; padding: 5px 15px;
+            border-radius: 20px; font-weight: 700; font-size: 1.1em;
+        }
+        .alerta-roja .header-alerta .urgente {
+            margin-left: auto; font-weight: 700; font-size: 1.1em;
+            color: #ffd700; animation: parpadeo 1s infinite;
+        }
+        .alerta-roja .lista-productos {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px; margin-top: 10px; max-height: 250px; overflow-y: auto;
+        }
+        .alerta-roja .item-alerta {
+            background: rgba(255, 255, 255, 0.15); padding: 12px 18px;
+            border-radius: 10px; display: flex; justify-content: space-between;
+            align-items: center; border-left: 4px solid #ffd700; backdrop-filter: blur(5px);
+        }
+        .alerta-roja .item-alerta .nombre-producto { font-weight: 700; color: white; font-size: 1.1em; }
+        .alerta-roja .item-alerta .detalle-producto { font-size: 0.9em; color: #ffd700; }
+        .alerta-roja .item-alerta .btn-reponer {
+            background: white; color: #dc3545; border: none; padding: 6px 18px;
+            border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-size: 0.9em;
+        }
+        .alerta-roja .item-alerta .btn-reponer:hover {
+            transform: scale(1.05); background: #28a745; color: white;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* MENÚ */
+        .menu {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px; margin-bottom: 30px;
+        }
+        .menu button {
+            padding: 12px 10px; border: none; border-radius: 10px; color: white;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); position: relative;
+        }
+        .menu button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+        .menu button:active { transform: translateY(0); }
+        .menu .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .menu .btn-danger { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .menu .btn-success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #333; }
+        .menu .btn-warning { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #333; }
+        .menu .btn-ventas { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #333; }
+        .menu .btn-diarias { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: #333; }
+        .menu .btn-stock { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
+        .menu .btn-ganancias { background: linear-gradient(135deg, #f9ca24 0%, #f0932b 100%); color: #333; }
+
+        /* BOTÓN TITILANTE */
+        .menu .btn-stock.titilante {
+            animation: titilar 0.8s infinite;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+        }
+        @keyframes titilar {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 107, 107, 1); }
+        }
+        .menu .btn-stock .indicador {
+            background: white; color: #dc3545; border-radius: 50%; width: 22px; height: 22px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; margin-left: 5px;
+            position: absolute; top: -8px; right: -8px; animation: parpadeo 0.8s infinite;
+        }
+
+        .panel {
+            background: #f8f9fa; border-radius: 15px; padding: 25px;
+            margin-bottom: 20px; display: none; animation: slideDown 0.3s ease;
+        }
+        .panel.active { display: block; }
+        .panel h2 { color: #333; margin-bottom: 20px; font-size: 1.8em; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 600; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px;
+            font-size: 16px; transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 12px 30px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+        .btn-success {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #333; padding: 12px 30px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4); }
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white; padding: 12px 30px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4); }
+        .btn-warning {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: #333; padding: 12px 30px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(253, 160, 133, 0.4); }
+        .btn-stock {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white; padding: 12px 30px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-stock:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4); }
+        .inventario-container { max-height: 500px; overflow-y: auto; padding: 10px; }
+        .rubro-card {
+            background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid #667eea;
+        }
+        .rubro-card h3 {
+            color: #333; margin-bottom: 15px; font-size: 1.5em;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .rubro-card h3 span { font-size: 0.8em; color: #666; font-weight: normal; }
+        .producto-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid #eee; transition: background 0.2s;
+        }
+        .producto-item:hover { background: #f8f9fa; }
+        .producto-item:last-child { border-bottom: none; }
+        .producto-nombre { font-weight: 600; color: #333; flex: 1; }
+        .producto-precio { color: #28a745; font-weight: 600; margin: 0 15px; }
+        .producto-cantidad {
+            background: #667eea; color: white; padding: 5px 15px; border-radius: 20px;
+            font-weight: 600; font-size: 0.9em;
+        }
+        .producto-cantidad.agotado { background: #dc3545; animation: pulse 0.8s infinite; }
+        .producto-cantidad.bajo-stock { background: #ffc107; color: #333; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        .total-general {
+            text-align: center; padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-radius: 15px; font-size: 1.3em; font-weight: 600; margin-top: 20px;
+        }
+        .mensaje { padding: 15px; border-radius: 10px; margin-bottom: 15px; display: none; font-weight: 600; }
+        .mensaje.exito { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .mensaje.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .mensaje.info { display: block; background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .mensaje.warning { display: block; background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+        .venta-item {
+            background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #43e97b;
+        }
+        .venta-item .venta-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .venta-item .venta-header .fecha { color: #666; font-size: 0.9em; }
+        .venta-item .venta-header .total { font-weight: 700; color: #28a745; font-size: 1.2em; }
+        .venta-item .venta-detalle {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 5px; padding: 10px; background: #f8f9fa; border-radius: 8px;
+        }
+        .venta-item .venta-detalle span { font-size: 0.95em; }
+        .venta-diaria {
+            background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .venta-diaria .fecha { font-size: 1.2em; font-weight: 700; color: #667eea; margin-bottom: 10px; }
+        .venta-diaria .resumen {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; background: #f8f9fa; border-radius: 8px;
+        }
+        .vacio { text-align: center; color: #999; padding: 40px 0; font-size: 1.2em; }
+        .scroll { max-height: 400px; overflow-y: auto; }
+        .scroll::-webkit-scrollbar { width: 8px; }
+        .scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .scroll::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
+        .scroll::-webkit-scrollbar-thumb:hover { background: #764ba2; }
+        .estadisticas {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .estadistica-card {
+            background: white; padding: 20px; border-radius: 10px; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .estadistica-card .numero { font-size: 2em; font-weight: 700; color: #667eea; }
+        .estadistica-card .label { color: #666; margin-top: 5px; }
+        .estadistica-card .numero.ganancia { color: #28a745; }
+        .carrito-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; background: white; border-radius: 8px; margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .carrito-item .eliminar {
+            color: #dc3545; cursor: pointer; font-weight: 700; padding: 5px 10px;
+            border-radius: 5px; transition: background 0.2s;
+        }
+        .carrito-item .eliminar:hover { background: #f8d7da; }
+        .carrito-total {
+            text-align: right; font-size: 1.3em; font-weight: 700; padding: 15px;
+            background: white; border-radius: 10px; margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stock-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px;
+            border-left: 5px solid #dc3545; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stock-item .producto-info { flex: 1; }
+        .stock-item .producto-info .nombre { font-weight: 700; color: #333; font-size: 1.1em; }
+        .stock-item .producto-info .detalle { color: #666; font-size: 0.9em; }
+        .stock-item .stock-cantidad {
+            font-weight: 700; color: #dc3545; font-size: 1.2em; margin: 0 20px;
+        }
+        .stock-item .btn-reponer {
+            background: #28a745; color: white; border: none; padding: 8px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s;
+        }
+        .stock-item .btn-reponer:hover { background: #218838; transform: scale(1.05); }
+        .ganancia-card {
+            background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid #f9ca24;
+        }
+        .ganancia-card .fecha { font-weight: 700; color: #333; font-size: 1.1em; }
+        .ganancia-card .monto { font-size: 1.8em; font-weight: 700; color: #28a745; }
+        .ganancia-card .detalle { color: #666; margin-top: 5px; }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .menu { grid-template-columns: 1fr 1fr; }
+            .container { padding: 15px; }
+            h1 { font-size: 1.8em; }
+            .alerta-roja .lista-productos { grid-template-columns: 1fr; }
+            .alerta-roja .header-alerta h2 { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 <span>Sistema de Inventario y Ventas</span></h1>
+        
+        <div id="estado-conexion" class="estado-conexion cargando">
+            🔄 Conectando a Supabase...
+        </div>
+
+        <!-- ========== CARTEL DE ALERTA ROJO ========== -->
+        <div id="alerta-roja" class="alerta-roja">
+            <div class="header-alerta">
+                <span class="icono">🚨</span>
+                <h2>¡PRODUCTO AGOTADO!</h2>
+                <span class="badge" id="contador-alerta">0</span>
+                <span class="urgente">⚠️ URGENTE - REPONER STOCK</span>
+            </div>
+            <div id="lista-alerta" class="lista-productos"></div>
+        </div>
+
+        <div id="mensaje" class="mensaje"></div>
+
+        <div class="menu">
+            <button class="btn-primary" onclick="mostrarPanel('agregar')">📦 Agregar</button>
+            <button class="btn-primary" onclick="mostrarPanel('listar')">📊 Inventario</button>
+            <button class="btn-primary" onclick="mostrarPanel('rubro')">📌 Por Rubro</button>
+            <button class="btn-primary" onclick="mostrarPanel('buscar')">🔍 Buscar</button>
+            <button class="btn-success" onclick="mostrarPanel('modificar')">✏️ Modificar</button>
+            <button class="btn-danger" onclick="mostrarPanel('eliminar')">🗑️ Eliminar</button>
+            <button class="btn-stock" id="btn-stock-bajo" onclick="mostrarPanel('stockbajo')">
+                ⚠️ Stock Bajo
+                <span class="indicador" id="indicador-stock" style="display:none;">0</span>
+            </button>
+            <button class="btn-ventas" onclick="mostrarPanel('ventas')">💰 Ventas</button>
+            <button class="btn-diarias" onclick="mostrarPanel('diarias')">📅 Ventas Diarias</button>
+            <button class="btn-ganancias" onclick="mostrarPanel('ganancias')">💹 Ganancias</button>
+        </div>
+
+        <!-- Panel: Agregar Producto -->
+        <div id="panel-agregar" class="panel">
+            <h2>📦 Agregar Producto</h2>
+            <div class="form-group">
+                <label>Nombre del producto</label>
+                <input type="text" id="agregar-nombre" placeholder="Ej: Coca Cola">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" id="agregar-cantidad" placeholder="15" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Precio unitario ($)</label>
+                    <input type="number" id="agregar-precio" placeholder="1500" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Rubro</label>
+                    <input type="text" id="agregar-rubro" placeholder="Ej: bebidas">
+                </div>
+            </div>
+            <button class="btn-primary" onclick="agregarProducto()">✅ Agregar Producto</button>
+        </div>
+
+        <!-- Panel: Listar Inventario -->
+        <div id="panel-listar" class="panel">
+            <h2>📊 Inventario Completo</h2>
+            <div id="inventario-listado" class="inventario-container"></div>
+        </div>
+
+        <!-- Panel: Listar por Rubro -->
+        <div id="panel-rubro" class="panel">
+            <h2>📌 Listar por Rubro</h2>
+            <div class="form-group">
+                <label>Nombre del rubro</label>
+                <input type="text" id="rubro-nombre" placeholder="Ej: bebidas">
+            </div>
+            <button class="btn-primary" onclick="listarPorRubro()">📋 Mostrar Rubro</button>
+            <div id="rubro-listado" class="inventario-container" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Panel: Buscar Producto -->
+        <div id="panel-buscar" class="panel">
+            <h2>🔍 Buscar Producto</h2>
+            <div class="search-box" style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="buscar-nombre" placeholder="Nombre del producto" style="flex:1; padding:12px; border:2px solid #ddd; border-radius:10px; font-size:16px;">
+                <button class="btn-primary" onclick="buscarProducto()">🔍 Buscar</button>
+            </div>
+            <div id="buscar-resultado"></div>
+        </div>
+
+        <!-- Panel: Modificar Producto -->
+        <div id="panel-modificar" class="panel">
+            <h2>✏️ Modificar Producto</h2>
+            <div class="form-group">
+                <label>Nombre del producto</label>
+                <input type="text" id="modificar-nombre" placeholder="Ej: Coca Cola">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nueva cantidad</label>
+                    <input type="number" id="modificar-cantidad" placeholder="20" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Nuevo precio</label>
+                    <input type="number" id="modificar-precio" placeholder="1800" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Rubro (opcional)</label>
+                    <input type="text" id="modificar-rubro" placeholder="Dejar vacío para buscar en todos">
+                </div>
+            </div>
+            <button class="btn-primary" onclick="modificarProducto()">✏️ Actualizar Producto</button>
+        </div>
+
+        <!-- Panel: Eliminar Producto -->
+        <div id="panel-eliminar" class="panel">
+            <h2>🗑️ Eliminar Producto</h2>
+            <div class="form-group">
+                <label>Nombre del producto</label>
+                <input type="text" id="eliminar-nombre" placeholder="Ej: Coca Cola">
+            </div>
+            <div class="form-group">
+                <label>Rubro (opcional)</label>
+                <input type="text" id="eliminar-rubro" placeholder="Dejar vacío para buscar en todos">
+            </div>
+            <button class="btn-danger" onclick="eliminarProducto()">🗑️ Eliminar Producto</button>
+        </div>
+
+        <!-- Panel: Stock Bajo -->
+        <div id="panel-stockbajo" class="panel">
+            <h2 id="titulo-stock-bajo">⚠️ Productos con Stock Crítico</h2>
+            <div class="form-group">
+                <label>Límite de stock</label>
+                <input type="number" id="stock-limite" value="5" min="1">
+            </div>
+            <button class="btn-primary" onclick="verStockBajo()">🔍 Buscar</button>
+            <div id="stock-resultado" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Panel: Ventas Múltiples -->
+        <div id="panel-ventas" class="panel">
+            <h2>💰 Venta de Múltiples Productos</h2>
+            <div class="estadisticas">
+                <div class="estadistica-card">
+                    <div class="numero" id="total-productos">0</div>
+                    <div class="label">Productos en inventario</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="numero" id="total-ventas-hoy">0</div>
+                    <div class="label">Ventas de hoy</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="numero" id="total-ingresos-hoy">$0</div>
+                    <div class="label">Ingresos de hoy</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Producto</label>
+                    <select id="venta-producto" style="width:100%; padding:12px; border:2px solid #ddd; border-radius:10px; font-size:16px;">
+                        <option value="">Seleccione un producto...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" id="venta-cantidad" placeholder="1" min="1" value="1">
+                </div>
+                <div class="form-group" style="display:flex; align-items:flex-end; gap:10px;">
+                    <button class="btn-success" onclick="agregarAlCarrito()" style="width:100%;">➕ Agregar</button>
+                </div>
+            </div>
+            <div id="carrito-container" style="margin-top:20px; background:white; border-radius:10px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <h3 style="margin-bottom:15px;">🛒 Carrito de Ventas</h3>
+                <div id="carrito-items"></div>
+                <div id="carrito-total" class="carrito-total">Total: $0.00</div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn-danger" onclick="vaciarCarrito()">🗑️ Vaciar</button>
+                    <button class="btn-success" onclick="finalizarVenta()" style="flex:1;">💰 Finalizar Venta</button>
+                </div>
+            </div>
+            <div id="venta-detalle" style="margin-top:20px;"></div>
+        </div>
+
+        <!-- Panel: Ventas Diarias -->
+        <div id="panel-diarias" class="panel">
+            <h2>📅 Ventas Diarias</h2>
+            <div style="margin-bottom:20px;">
+                <button class="btn-primary" onclick="cargarVentasDiarias()">🔄 Actualizar</button>
+                <button class="btn-danger" onclick="limpiarVentasDiarias()" style="margin-left:10px;">🗑️ Limpiar</button>
+            </div>
+            <div id="ventas-diarias-container" class="scroll"></div>
+        </div>
+
+        <!-- Panel: Ganancias -->
+        <div id="panel-ganancias" class="panel">
+            <h2>💹 Ganancias Diarias</h2>
+            <div class="estadisticas">
+                <div class="estadistica-card">
+                    <div class="numero ganancia" id="ganancia-hoy">$0</div>
+                    <div class="label">Ganancia de hoy</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="numero" id="ganancia-semana">$0</div>
+                    <div class="label">Ganancia de la semana</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="numero" id="ganancia-mes">$0</div>
+                    <div class="label">Ganancia del mes</div>
+                </div>
+            </div>
+            <div style="margin-bottom:20px;">
+                <button class="btn-primary" onclick="actualizarGanancias()">🔄 Actualizar</button>
+                <button class="btn-success" onclick="exportarGanancias()" style="margin-left:10px;">📊 Exportar</button>
+            </div>
+            <div id="ganancias-container"></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; color: #999; font-size: 0.9em;">
+            ☁️ Datos sincronizados con Supabase en la nube
+        </div>
+    </div>
+
+    <!-- Cargar Supabase desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // ============================================
+        // CONFIGURACIÓN DE SUPABASE
+        // ============================================
+        // ⚠️ REEMPLAZA ESTOS VALORES CON TUS CREDENCIALES
+        const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU_ANON_KEY_AQUI';
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================
+        // CLASE SISTEMA DE INVENTARIO CON SUPABASE
+        // ============================================
+        class SistemaInventario {
+            constructor() {
+                this.inventario = {};
+                this.ventas = {};
+                this.carrito = [];
+                this.limiteStock = 5;
+                this.canalRealtime = null;
+                this.datosListos = false;
+            }
+
+            // ========== CARGA INICIAL DESDE SUPABASE ==========
+            async inicializar() {
+                try {
+                    actualizarEstado('🔄 Cargando datos desde Supabase...', 'cargando');
+                    
+                    const { data, error } = await db
+                        .from('inventario')
+                        .select('datos')
+                        .eq('id', 1)
+                        .single();
+
+                    if (error) throw error;
+
+                    const datos = data?.datos || {};
+                    this.inventario = datos.inventario || {};
+                    this.ventas = datos.ventas || {};
+                    
+                    this.datosListos = true;
+                    actualizarEstado('✅ Conectado a Supabase - Datos sincronizados', 'conectado');
+                    console.log('Datos cargados:', this.inventario);
+
+                } catch (error) {
+                    console.error('Error al cargar:', error);
+                    actualizarEstado('❌ Error de conexión con Supabase. Usando datos locales.', 'desconectado');
+                    // Fallback a localStorage
+                    this.inventario = JSON.parse(localStorage.getItem('inventario') || '{}');
+                    this.ventas = JSON.parse(localStorage.getItem('ventas') || '{}');
+                }
+
+                this.actualizarInterfaz();
+                this.configurarRealtime();
+            }
+
+            // ========== GUARDAR EN SUPABASE ==========
+            async guardarDatos() {
+                const datos = {
+                    inventario: this.inventario,
+                    ventas: this.ventas,
+                    ultimaActualizacion: new Date().toISOString()
+                };
+
+                try {
+                    const { error } = await db
+                        .from('inventario')
+                        .update({ 
+                            datos: datos,
+                            actualizado_en: new Date().toISOString()
+                        })
+                        .eq('id', 1);
+
+                    if (error) throw error;
+                    
+                    // También guardar en localStorage como respaldo
+                    localStorage.setItem('inventario', JSON.stringify(this.inventario));
+                    localStorage.setItem('ventas', JSON.stringify(this.ventas));
+                    
+                    console.log('✅ Datos guardados en Supabase');
+                } catch (error) {
+                    console.error('Error al guardar:', error);
+                    mostrarMensaje('⚠️ Error al guardar en la nube. Datos guardados localmente.', 'warning');
+                    localStorage.setItem('inventario', JSON.stringify(this.inventario));
+                    localStorage.setItem('ventas', JSON.stringify(this.ventas));
+                }
+
+                this.actualizarInterfaz();
+            }
+
+            // ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+            configurarRealtime() {
+                try {
+                    this.canalRealtime = db
+                        .channel('cambios-inventario')
+                        .on(
+                            'postgres_changes',
+                            {
+                                event: 'UPDATE',
+                                schema: 'public',
+                                table: 'inventario',
+                                filter: 'id=eq.1'
+                            },
+                            (payload) => {
+                                console.log('🔄 Cambio recibido desde otro dispositivo:', payload);
+                                const nuevosDatos = payload.new?.datos;
+                                if (nuevosDatos) {
+                                    this.inventario = nuevosDatos.inventario || {};
+                                    this.ventas = nuevosDatos.ventas || {};
+                                    this.actualizarInterfaz();
+                                    mostrarMensaje('🔄 Datos sincronizados desde otro dispositivo', 'info');
+                                }
+                            }
+                        )
+                        .subscribe((status) => {
+                            console.log('Estado de Realtime:', status);
+                        });
+                } catch (error) {
+                    console.warn('Realtime no disponible:', error);
+                }
+            }
+
+            // ========== ACTUALIZAR INTERFAZ ==========
+            actualizarInterfaz() {
+                actualizarListado();
+                this.actualizarSelectVentas();
+                this.actualizarEstadisticas();
+                this.actualizarAlertaRoja();
+                this.actualizarIndicadorStock();
+                this.actualizarCarritoUI();
+            }
+
+            // ========== PRODUCTOS ==========
+            agregarProducto(nombre, cantidad, precio, rubro) {
+                nombre = nombre.trim().toLowerCase();
+                rubro = rubro.trim().toLowerCase();
+
+                if (!nombre || !rubro) {
+                    mostrarMensaje('❌ Nombre y rubro son obligatorios.', 'error');
+                    return false;
+                }
+
+                cantidad = parseInt(cantidad);
+                precio = parseFloat(precio);
+
+                if (isNaN(cantidad) || cantidad < 0) {
+                    mostrarMensaje('❌ La cantidad debe ser un número válido y no negativo.', 'error');
+                    return false;
+                }
+
+                if (isNaN(precio) || precio < 0) {
+                    mostrarMensaje('❌ El precio debe ser un número válido y no negativo.', 'error');
+                    return false;
+                }
+
+                if (!this.inventario[rubro]) {
+                    this.inventario[rubro] = {};
+                }
+
+                if (this.inventario[rubro][nombre]) {
+                    this.inventario[rubro][nombre].cantidad += cantidad;
+                    this.inventario[rubro][nombre].precio = precio;
+                    mostrarMensaje(`✅ Producto '${nombre}' actualizado. Nueva cantidad: ${this.inventario[rubro][nombre].cantidad}`, 'exito');
+                } else {
+                    this.inventario[rubro][nombre] = { cantidad: cantidad, precio: precio };
+                    mostrarMensaje(`✅ Producto '${nombre}' agregado al rubro '${rubro}' con precio $${precio}.`, 'exito');
+                }
+
+                this.guardarDatos();
+                return true;
+            }
+
+            eliminarProducto(nombre, rubro = null) {
+                nombre = nombre.trim().toLowerCase();
+
+                if (rubro) {
+                    rubro = rubro.trim().toLowerCase();
+                    if (this.inventario[rubro] && this.inventario[rubro][nombre]) {
+                        delete this.inventario[rubro][nombre];
+                        if (Object.keys(this.inventario[rubro]).length === 0) {
+                            delete this.inventario[rubro];
+                        }
+                        mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubro}'.`, 'exito');
+                        this.guardarDatos();
+                        return true;
+                    } else {
+                        mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
+                        return false;
+                    }
+                }
+
+                for (let rubroKey in this.inventario) {
+                    if (this.inventario[rubroKey][nombre]) {
+                        delete this.inventario[rubroKey][nombre];
+                        if (Object.keys(this.inventario[rubroKey]).length === 0) {
+                            delete this.inventario[rubroKey];
+                        }
+                        mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubroKey}'.`, 'exito');
+                        this.guardarDatos();
+                        return true;
+                    }
+                }
+
+                mostrarMensaje(`❌ Producto '${nombre}' no encontrado en ningún rubro.`, 'error');
+                return false;
+            }
+
+            modificarProducto(nombre, nuevaCantidad, nuevoPrecio, rubro = null) {
+                nombre = nombre.trim().toLowerCase();
+
+                nuevaCantidad = parseInt(nuevaCantidad);
+                nuevoPrecio = parseFloat(nuevoPrecio);
+
+                if (!isNaN(nuevaCantidad) && nuevaCantidad < 0) {
+                    mostrarMensaje('❌ La cantidad no puede ser negativa.', 'error');
+                    return false;
+                }
+
+                if (!isNaN(nuevoPrecio) && nuevoPrecio < 0) {
+                    mostrarMensaje('❌ El precio no puede ser negativo.', 'error');
+                    return false;
+                }
+
+                if (rubro) {
+                    rubro = rubro.trim().toLowerCase();
+                    if (this.inventario[rubro] && this.inventario[rubro][nombre]) {
+                        if (!isNaN(nuevaCantidad)) this.inventario[rubro][nombre].cantidad = nuevaCantidad;
+                        if (!isNaN(nuevoPrecio)) this.inventario[rubro][nombre].precio = nuevoPrecio;
+                        mostrarMensaje(`✅ Producto '${nombre}' actualizado.`, 'exito');
+                        this.guardarDatos();
+                        return true;
+                    } else {
+                        mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
+                        return false;
+                    }
+                }
+
+                for (let rubroKey in this.inventario) {
+                    if (this.inventario[rubroKey][nombre]) {
+                        if (!isNaN(nuevaCantidad)) this.inventario[rubroKey][nombre].cantidad = nuevaCantidad;
+                        if (!isNaN(nuevoPrecio)) this.inventario[rubroKey][nombre].precio = nuevoPrecio;
+                        mostrarMensaje(`✅ Producto '${nombre}' actualizado en '${rubroKey}'.`, 'exito');
+                        this.guardarDatos();
+                        return true;
+                    }
+                }
+
+                mostrarMensaje(`❌ Producto '${nombre}' no encontrado.`, 'error');
+                return false;
+            }
+
+            // ========== CARRITO Y VENTAS ==========
+            agregarAlCarrito(nombre, cantidad) {
+                nombre = nombre.trim().toLowerCase();
+                cantidad = parseInt(cantidad);
+
+                if (!nombre) {
+                    mostrarMensaje('❌ Seleccione un producto.', 'error');
+                    return false;
+                }
+
+                if (isNaN(cantidad) || cantidad <= 0) {
+                    mostrarMensaje('❌ Ingrese una cantidad válida mayor a 0.', 'error');
+                    return false;
+                }
+
+                let productoEncontrado = null;
+                let rubroEncontrado = null;
+
+                for (let rubro in this.inventario) {
+                    if (this.inventario[rubro][nombre]) {
+                        productoEncontrado = this.inventario[rubro][nombre];
+                        rubroEncontrado = rubro;
+                        break;
+                    }
+                }
+
+                if (!productoEncontrado) {
+                    mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el inventario.`, 'error');
+                    return false;
+                }
+
+                if (productoEncontrado.cantidad < cantidad) {
+                    mostrarMensaje(`❌ Stock insuficiente. Disponible: ${productoEncontrado.cantidad} unidades.`, 'error');
+                    return false;
+                }
+
+                const existente = this.carrito.find(item => item.producto === nombre);
+                if (existente) {
+                    if (existente.cantidad + cantidad > productoEncontrado.cantidad) {
+                        mostrarMensaje(`❌ No hay suficiente stock. Disponible: ${productoEncontrado.cantidad}`, 'error');
+                        return false;
+                    }
+                    existente.cantidad += cantidad;
+                } else {
+                    this.carrito.push({
+                        producto: nombre,
+                        cantidad: cantidad,
+                        precioUnitario: productoEncontrado.precio,
+                        rubro: rubroEncontrado
+                    });
+                }
+
+                mostrarMensaje(`✅ Agregado al carrito: ${cantidad} x ${nombre}`, 'exito');
+                this.actualizarCarritoUI();
+                return true;
+            }
+
+            eliminarDelCarrito(index) {
+                this.carrito.splice(index, 1);
+                this.actualizarCarritoUI();
+                mostrarMensaje('🗑️ Producto eliminado del carrito.', 'info');
+            }
+
+            vaciarCarrito() {
+                this.carrito = [];
+                this.actualizarCarritoUI();
+                mostrarMensaje('🗑️ Carrito vaciado.', 'info');
+            }
+
+            actualizarCarritoUI() {
+                const container = document.getElementById('carrito-items');
+                const totalContainer = document.getElementById('carrito-total');
+
+                if (!container || !totalContainer) return;
+
+                if (this.carrito.length === 0) {
+                    container.innerHTML = '<div class="vacio">🛒 El carrito está vacío</div>';
+                    totalContainer.textContent = 'Total: $0.00';
+                    return;
+                }
+
+                let html = '';
+                let totalGeneral = 0;
+
+                this.carrito.forEach((item, index) => {
+                    const subtotal = item.cantidad * item.precioUnitario;
+                    totalGeneral += subtotal;
+                    html += `
+                        <div class="carrito-item">
+                            <div>
+                                <strong>${item.producto}</strong>
+                                <span style="color:#666; font-size:0.9em;">(${item.rubro})</span>
+                                <span style="margin-left:10px;">${item.cantidad} x $${item.precioUnitario.toFixed(2)}</span>
+                                <span style="margin-left:10px; color:#28a745; font-weight:600;">= $${subtotal.toFixed(2)}</span>
+                            </div>
+                            <span class="eliminar" onclick="sistema.eliminarDelCarrito(${index})">✖</span>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+                totalContainer.textContent = `Total: $${totalGeneral.toFixed(2)}`;
+            }
+
+            async finalizarVenta() {
+                if (this.carrito.length === 0) {
+                    mostrarMensaje('❌ El carrito está vacío. Agregue productos primero.', 'error');
+                    return false;
+                }
+
+                for (let item of this.carrito) {
+                    let encontrado = false;
+                    for (let rubro in this.inventario) {
+                        if (this.inventario[rubro][item.producto]) {
+                            if (this.inventario[rubro][item.producto].cantidad < item.cantidad) {
+                                mostrarMensaje(`❌ Stock insuficiente para ${item.producto}. Disponible: ${this.inventario[rubro][item.producto].cantidad}`, 'error');
+                                return false;
+                            }
+                            encontrado = true;
+                            break;
+                        }
+                    }
+                    if (!encontrado) {
+                        mostrarMensaje(`❌ Producto '${item.producto}' no encontrado en el inventario.`, 'error');
+                        return false;
+                    }
+                }
+
+                const hoy = new Date();
+                const fechaKey = hoy.toISOString().split('T')[0];
+                const hora = hoy.toLocaleTimeString();
+                const totalVenta = this.carrito.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0);
+
+                if (!this.ventas[fechaKey]) {
+                    this.ventas[fechaKey] = [];
+                }
+
+                this.ventas[fechaKey].push({
+                    productos: this.carrito.map(item => ({
+                        producto: item.producto,
+                        cantidad: item.cantidad,
+                        precioUnitario: item.precioUnitario,
+                        rubro: item.rubro
+                    })),
+                    total: totalVenta,
+                    hora: hora,
+                    items: this.carrito.length
+                });
+
+                // Descontar stock (NO eliminar el producto, solo bajar cantidad)
+                for (let item of this.carrito) {
+                    for (let rubro in this.inventario) {
+                        if (this.inventario[rubro][item.producto]) {
+                            this.inventario[rubro][item.producto].cantidad -= item.cantidad;
+                            break;
+                        }
+                    }
+                }
+
+                await this.guardarDatos();
+
+                const detalles = this.carrito.map(item => 
+                    `${item.cantidad} x ${item.producto}`
+                ).join(', ');
+
+                mostrarMensaje(`💰 Venta realizada: ${detalles} - Total: $${totalVenta.toFixed(2)}`, 'exito');
+                
+                this.mostrarDetalleVentaMultiple(this.carrito, totalVenta);
+                
+                this.carrito = [];
+                this.actualizarCarritoUI();
+                this.actualizarInterfaz();
+
+                return true;
+            }
+
+            mostrarDetalleVentaMultiple(productos, total) {
+                const container = document.getElementById('venta-detalle');
+                if (!container) return;
+
+                let html = `
+                    <div class="venta-item">
+                        <div class="venta-header">
+                            <span style="font-weight:700;">✅ Venta registrada</span>
+                            <span class="total">$${total.toFixed(2)}</span>
+                        </div>
+                        <div style="padding:10px; background:#f8f9fa; border-radius:8px;">
+                `;
+
+                for (let item of productos) {
+                    html += `
+                        <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;">
+                            <span>📦 ${item.producto} (${item.rubro})</span>
+                            <span>${item.cantidad} x $${item.precioUnitario.toFixed(2)} = $${(item.cantidad * item.precioUnitario).toFixed(2)}</span>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                        <div style="margin-top:10px; text-align:right; font-weight:700; font-size:1.2em;">
+                            Total: $${total.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            }
+
+            // ========== ALERTA ROJA ==========
+            getProductosAgotados() {
+                const agotados = [];
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad === 0) {
+                            agotados.push({ producto, rubro, precio: data.precio });
+                        }
+                    }
+                }
+                return agotados;
+            }
+
+            getProductosCriticos() {
+                const criticos = [];
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad > 0 && data.cantidad < this.limiteStock) {
+                            criticos.push({ producto, rubro, cantidad: data.cantidad, precio: data.precio });
+                        }
+                    }
+                }
+                return criticos;
+            }
+
+            actualizarAlertaRoja() {
+                const alerta = document.getElementById('alerta-roja');
+                const lista = document.getElementById('lista-alerta');
+                const contador = document.getElementById('contador-alerta');
+                if (!alerta || !lista || !contador) return;
+
+                const agotados = this.getProductosAgotados();
+
+                if (agotados.length === 0) {
+                    alerta.classList.remove('activa');
+                    return;
+                }
+
+                alerta.classList.add('activa');
+                contador.textContent = agotados.length;
+
+                let html = '';
+                for (let item of agotados) {
+                    html += `
+                        <div class="item-alerta">
+                            <div>
+                                <span class="nombre-producto">🚫 ${item.producto}</span>
+                                <span class="detalle-producto">(${item.rubro})</span>
+                                <span style="font-weight:700; margin-left:10px; color:#ffd700;">¡AGOTADO!</span>
+                            </div>
+                            <div>
+                                <span style="font-weight:600; margin-right:10px; color:#ffd700;">$${item.precio.toFixed(2)}</span>
+                                <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">✅ Reponer</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                lista.innerHTML = html;
+            }
+
+            irAReponer(producto, rubro) {
+                mostrarMensaje(`📦 Para reponer '${producto}', ve al panel MODIFICAR y aumenta el stock.`, 'info');
+                document.getElementById('modificar-nombre').value = producto;
+                document.getElementById('modificar-rubro').value = rubro;
+                mostrarPanel('modificar');
+                document.getElementById('modificar-cantidad').focus();
+            }
+
+            actualizarIndicadorStock() {
+                const btn = document.getElementById('btn-stock-bajo');
+                const indicador = document.getElementById('indicador-stock');
+                if (!btn || !indicador) return;
+
+                const agotados = this.getProductosAgotados();
+                const criticos = this.getProductosCriticos();
+                const totalCriticos = agotados.length + criticos.length;
+
+                if (totalCriticos === 0) {
+                    btn.classList.remove('titilante');
+                    indicador.style.display = 'none';
+                    return;
+                }
+
+                btn.classList.add('titilante');
+                indicador.style.display = 'inline-flex';
+                indicador.textContent = totalCriticos;
+
+                const tituloPanel = document.getElementById('titulo-stock-bajo');
+                if (tituloPanel) {
+                    tituloPanel.textContent = `⚠️ Productos con Stock Crítico (${totalCriticos})`;
+                }
+            }
+
+            // ========== LISTADOS ==========
+            listarPorRubro(rubro = null) {
+                if (Object.keys(this.inventario).length === 0) {
+                    return '<div class="vacio">📭 El inventario está vacío.</div>';
+                }
+
+                if (rubro) {
+                    rubro = rubro.trim().toLowerCase();
+                    if (this.inventario[rubro]) {
+                        return this._generarHTMLRubro(rubro);
+                    } else {
+                        return `<div class="vacio">❌ Rubro '${rubro}' no encontrado.</div>`;
+                    }
+                }
+
+                let html = '';
+                let totalGeneral = 0;
+                let valorTotal = 0;
+
+                const rubrosOrdenados = Object.keys(this.inventario).sort();
+                for (let rubroKey of rubrosOrdenados) {
+                    const productos = this.inventario[rubroKey];
+                    const totalRubro = Object.values(productos).reduce((a, b) => a + b.cantidad, 0);
+                    const valorRubro = Object.values(productos).reduce((a, b) => a + (b.cantidad * b.precio), 0);
+                    totalGeneral += totalRubro;
+                    valorTotal += valorRubro;
+
+                    html += `
+                        <div class="rubro-card">
+                            <h3>📌 ${rubroKey.toUpperCase()} <span>Total: ${totalRubro} unidades - Valor: $${valorRubro.toFixed(2)}</span></h3>
+                    `;
+
+                    const productosOrdenados = Object.keys(productos).sort();
+                    for (let producto of productosOrdenados) {
+                        const data = productos[producto];
+                        let estado = '';
+                        if (data.cantidad === 0) estado = 'agotado';
+                        else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
+                        html += `
+                            <div class="producto-item">
+                                <span class="producto-nombre">${producto}</span>
+                                <span class="producto-precio">$${data.precio.toFixed(2)}</span>
+                                <span class="producto-cantidad ${estado}">${data.cantidad} unidades</span>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                }
+
+                html += `
+                    <div class="total-general">
+                        📦 TOTAL: ${totalGeneral} unidades | 💰 VALOR TOTAL: $${valorTotal.toFixed(2)}
+                    </div>
+                `;
+
+                return html;
+            }
+
+            _generarHTMLRubro(rubro) {
+                const productos = this.inventario[rubro];
+                const totalRubro = Object.values(productos).reduce((a, b) => a + b.cantidad, 0);
+                const valorRubro = Object.values(productos).reduce((a, b) => a + (b.cantidad * b.precio), 0);
+
+                let html = `
+                    <div class="rubro-card">
+                        <h3>📌 ${rubro.toUpperCase()} <span>Total: ${totalRubro} unidades - Valor: $${valorRubro.toFixed(2)}</span></h3>
+                `;
+
+                const productosOrdenados = Object.keys(productos).sort();
+                for (let producto of productosOrdenados) {
+                    const data = productos[producto];
+                    let estado = '';
+                    if (data.cantidad === 0) estado = 'agotado';
+                    else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
+                    html += `
+                        <div class="producto-item">
+                            <span class="producto-nombre">${producto}</span>
+                            <span class="producto-precio">$${data.precio.toFixed(2)}</span>
+                            <span class="producto-cantidad ${estado}">${data.cantidad} unidades</span>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+                return html;
+            }
+
+            buscarProducto(nombre) {
+                nombre = nombre.trim().toLowerCase();
+                if (!nombre) return '<div class="vacio">❌ Ingrese un nombre para buscar.</div>';
+
+                let encontrado = false;
+                let html = '';
+
+                for (let rubro in this.inventario) {
+                    if (this.inventario[rubro][nombre]) {
+                        const data = this.inventario[rubro][nombre];
+                        let estado = '';
+                        if (data.cantidad === 0) estado = 'agotado';
+                        else if (data.cantidad < this.limiteStock) estado = 'bajo-stock';
+                        html += `
+                            <div class="rubro-card">
+                                <h3>✅ Producto encontrado</h3>
+                                <div class="producto-item">
+                                    <span class="producto-nombre">${nombre}</span>
+                                    <span class="producto-precio">$${data.precio.toFixed(2)}</span>
+                                    <span class="producto-cantidad ${estado}">${data.cantidad} unidades en rubro: ${rubro}</span>
+                                </div>
+                            </div>
+                        `;
+                        encontrado = true;
+                    }
+                }
+
+                if (!encontrado) {
+                    return `<div class="vacio">❌ Producto '${nombre}' no encontrado.</div>`;
+                }
+
+                return html;
+            }
+
+            listarStockCritico() {
+                const agotados = this.getProductosAgotados();
+                const criticos = this.getProductosCriticos();
+                const todos = [...agotados.map(a => ({...a, cantidad: 0})), ...criticos];
+                
+                if (todos.length === 0) {
+                    return '<div class="vacio">✅ No hay productos con stock crítico.</div>';
+                }
+
+                let html = '';
+                for (let item of todos) {
+                    const icono = item.cantidad === 0 ? '🚫' : '⚠️';
+                    const color = item.cantidad === 0 ? '#dc3545' : '#ffc107';
+                    const texto = item.cantidad === 0 ? 'AGOTADO' : `${item.cantidad} unidades`;
+                    html += `
+                        <div class="stock-item" style="border-left-color: ${color};">
+                            <div class="producto-info">
+                                <div class="nombre">${icono} ${item.producto}</div>
+                                <div class="detalle">Rubro: ${item.rubro} | Precio: $${item.precio.toFixed(2)}</div>
+                            </div>
+                            <div class="stock-cantidad" style="color: ${color};">${texto}</div>
+                            <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">✅ Reponer</button>
+                        </div>
+                    `;
+                }
+                return html;
+            }
+
+            // ========== GANANCIAS ==========
+            calcularGanancias() {
+                const hoy = new Date();
+                const hoyStr = hoy.toISOString().split('T')[0];
+                
+                let gananciaHoy = 0;
+                if (this.ventas[hoyStr]) {
+                    gananciaHoy = this.ventas[hoyStr].reduce((sum, v) => sum + v.total, 0);
+                }
+
+                let gananciaSemana = 0;
+                for (let i = 0; i < 7; i++) {
+                    const fecha = new Date(hoy);
+                    fecha.setDate(fecha.getDate() - i);
+                    const fechaStr = fecha.toISOString().split('T')[0];
+                    if (this.ventas[fechaStr]) {
+                        gananciaSemana += this.ventas[fechaStr].reduce((sum, v) => sum + v.total, 0);
+                    }
+                }
+
+                let gananciaMes = 0;
+                for (let i = 0; i < 30; i++) {
+                    const fecha = new Date(hoy);
+                    fecha.setDate(fecha.getDate() - i);
+                    const fechaStr = fecha.toISOString().split('T')[0];
+                    if (this.ventas[fechaStr]) {
+                        gananciaMes += this.ventas[fechaStr].reduce((sum, v) => sum + v.total, 0);
+                    }
+                }
+
+                return { hoy: gananciaHoy, semana: gananciaSemana, mes: gananciaMes };
+            }
+
+            generarHTMLGanancias() {
+                const fechas = Object.keys(this.ventas).sort().reverse();
+                
+                if (fechas.length === 0) {
+                    return '<div class="vacio">📭 No hay ventas registradas para calcular ganancias.</div>';
+                }
+
+                let html = '';
+                let totalGeneral = 0;
+                for (let fecha of fechas) {
+                    const ventas = this.ventas[fecha];
+                    const totalDia = ventas.reduce((sum, v) => sum + v.total, 0);
+                    totalGeneral += totalDia;
+                    const cantidadVentas = ventas.length;
+
+                    html += `
+                        <div class="ganancia-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div class="fecha">📅 ${fecha}</div>
+                                    <div class="detalle">${cantidadVentas} ventas realizadas</div>
+                                </div>
+                                <div class="monto">$${totalDia.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="total-general" style="background: linear-gradient(135deg, #f9ca24 0%, #f0932b 100%);">
+                        💰 TOTAL ACUMULADO: $${totalGeneral.toFixed(2)}
+                    </div>
+                `;
+
+                return html;
+            }
+
+            exportarGanancias() {
+                const ganancias = this.calcularGanancias();
+                let texto = '=== REPORTE DE GANANCIAS ===\n\n';
+                texto += `📅 Fecha: ${new Date().toLocaleDateString()}\n`;
+                texto += `💰 Ganancia de hoy: $${ganancias.hoy.toFixed(2)}\n`;
+                texto += `📅 Ganancia de la semana: $${ganancias.semana.toFixed(2)}\n`;
+                texto += `📆 Ganancia del mes: $${ganancias.mes.toFixed(2)}\n\n`;
+                texto += '=== DETALLE POR DÍA ===\n\n';
+
+                const fechas = Object.keys(this.ventas).sort().reverse();
+                for (let fecha of fechas) {
+                    const ventas = this.ventas[fecha];
+                    const totalDia = ventas.reduce((sum, v) => sum + v.total, 0);
+                    texto += `${fecha}: $${totalDia.toFixed(2)} (${ventas.length} ventas)\n`;
+                }
+
+                const blob = new Blob([texto], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ganancias_${new Date().toISOString().split('T')[0]}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                mostrarMensaje('✅ Reporte de ganancias exportado.', 'exito');
+            }
+
+            actualizarPanelGanancias() {
+                const container = document.getElementById('ganancias-container');
+                if (!container) return;
+                container.innerHTML = this.generarHTMLGanancias();
+                
+                const ganancias = this.calcularGanancias();
+                document.getElementById('ganancia-hoy').textContent = `$${ganancias.hoy.toFixed(2)}`;
+                document.getElementById('ganancia-semana').textContent = `$${ganancias.semana.toFixed(2)}`;
+                document.getElementById('ganancia-mes').textContent = `$${ganancias.mes.toFixed(2)}`;
+            }
+
+            // ========== VENTAS DIARIAS ==========
+            getTotalVentasHoy() {
+                const hoy = new Date().toISOString().split('T')[0];
+                const ventasHoy = this.ventas[hoy] || [];
+                return ventasHoy.reduce((sum, v) => sum + v.total, 0);
+            }
+
+            getCantidadVentasHoy() {
+                const hoy = new Date().toISOString().split('T')[0];
+                return (this.ventas[hoy] || []).length;
+            }
+
+            getTotalProductos() {
+                let total = 0;
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        total += this.inventario[rubro][producto].cantidad;
+                    }
+                }
+                return total;
+            }
+
+            actualizarSelectVentas() {
+                const select = document.getElementById('venta-producto');
+                if (!select) return;
+                select.innerHTML = '<option value="">Seleccione un producto...</option>';
+
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad > 0) {
+                            const option = document.createElement('option');
+                            option.value = producto;
+                            option.textContent = `${producto} (${rubro}) - Stock: ${data.cantidad} - $${data.precio.toFixed(2)}`;
+                            select.appendChild(option);
+                        }
+                    }
+                }
+            }
+
+            actualizarEstadisticas() {
+                const elProductos = document.getElementById('total-productos');
+                const elVentas = document.getElementById('total-ventas-hoy');
+                const elIngresos = document.getElementById('total-ingresos-hoy');
+                
+                if (elProductos) elProductos.textContent = this.getTotalProductos();
+                if (elVentas) elVentas.textContent = this.getCantidadVentasHoy();
+                if (elIngresos) elIngresos.textContent = `$${this.getTotalVentasHoy().toFixed(2)}`;
+                
+                const panelGanancias = document.getElementById('panel-ganancias');
+                if (panelGanancias && panelGanancias.classList.contains('active')) {
+                    this.actualizarPanelGanancias();
+                }
+            }
+
+            generarHTMLVentasDiarias() {
+                const fechas = Object.keys(this.ventas).sort().reverse();
+                if (fechas.length === 0) {
+                    return '<div class="vacio">📭 No hay ventas registradas.</div>';
+                }
+
+                let html = '';
+                let totalGeneral = 0;
+
+                for (let fecha of fechas) {
+                    const ventas = this.ventas[fecha];
+                    const totalDia = ventas.reduce((sum, v) => sum + v.total, 0);
+                    totalGeneral += totalDia;
+
+                    html += `
+                        <div class="venta-diaria">
+                            <div class="fecha">📅 ${fecha}</div>
+                            <div class="resumen">
+                                <span>💰 Total del día: <strong>$${totalDia.toFixed(2)}</strong></span>
+                                <span>📦 ${ventas.length} ventas realizadas</span>
+                            </div>
+                    `;
+
+                    for (let venta of ventas) {
+                        html += `
+                            <div class="venta-item" style="margin-top:10px;">
+                                <div class="venta-header">
+                                    <span>🕐 ${venta.hora}</span>
+                                    <span class="total">$${venta.total.toFixed(2)}</span>
+                                </div>
+                                <div style="padding:10px; background:#f8f9fa; border-radius:8px;">
+                        `;
+
+                        for (let producto of venta.productos) {
+                            html += `
+                                <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #eee;">
+                                    <span>📦 ${producto.producto} (${producto.rubro})</span>
+                                    <span>${producto.cantidad} x $${producto.precioUnitario.toFixed(2)}</span>
+                                </div>
+                            `;
+                        }
+
+                        html += `</div></div>`;
+                    }
+
+                    html += `</div>`;
+                }
+
+                html += `
+                    <div class="total-general">
+                        💰 TOTAL GENERAL DE VENTAS: $${totalGeneral.toFixed(2)}
+                    </div>
+                `;
+
+                return html;
+            }
+
+            async limpiarVentas() {
+                if (confirm('¿Estás seguro de eliminar todo el historial de ventas?')) {
+                    this.ventas = {};
+                    await this.guardarDatos();
+                    mostrarMensaje('✅ Historial de ventas eliminado.', 'exito');
+                    this.actualizarInterfaz();
+                }
+            }
+        }
+
+        // ============================================
+        // INSTANCIA Y FUNCIONES DE INTERFAZ
+        // ============================================
+        const sistema = new SistemaInventario();
+
+        function actualizarEstado(texto, tipo) {
+            const el = document.getElementById('estado-conexion');
+            if (!el) return;
+            el.className = `estado-conexion ${tipo}`;
+            el.textContent = texto;
+        }
+
+        function mostrarMensaje(texto, tipo = 'info') {
+            const mensaje = document.getElementById('mensaje');
+            if (!mensaje) return;
+            mensaje.className = `mensaje ${tipo}`;
+            mensaje.textContent = texto;
+            mensaje.style.display = 'block';
+
+            clearTimeout(window.mensajeTimeout);
+            window.mensajeTimeout = setTimeout(() => {
+                mensaje.style.display = 'none';
+            }, 4000);
+        }
+
+        function mostrarPanel(panel) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            const panelElement = document.getElementById(`panel-${panel}`);
+            if (panelElement) panelElement.classList.add('active');
+
+            if (panel === 'listar') actualizarListado();
+            else if (panel === 'ventas') {
+                sistema.actualizarSelectVentas();
+                sistema.actualizarEstadisticas();
+                const detalle = document.getElementById('venta-detalle');
+                if (detalle) detalle.innerHTML = '';
+                sistema.actualizarCarritoUI();
+            }
+            else if (panel === 'diarias') cargarVentasDiarias();
+            else if (panel === 'stockbajo') verStockBajo();
+            else if (panel === 'ganancias') sistema.actualizarPanelGanancias();
+        }
+
+        function actualizarListado() {
+            const container = document.getElementById('inventario-listado');
+            if (container) container.innerHTML = sistema.listarPorRubro();
+        }
+
+        // ========== ACCIONES ==========
+        function agregarProducto() {
+            const nombre = document.getElementById('agregar-nombre').value;
+            const cantidad = document.getElementById('agregar-cantidad').value;
+            const precio = document.getElementById('agregar-precio').value;
+            const rubro = document.getElementById('agregar-rubro').value;
+
+            if (sistema.agregarProducto(nombre, cantidad, precio, rubro)) {
+                document.getElementById('agregar-nombre').value = '';
+                document.getElementById('agregar-cantidad').value = '';
+                document.getElementById('agregar-precio').value = '';
+                document.getElementById('agregar-rubro').value = '';
+            }
+        }
+
+        function eliminarProducto() {
+            const nombre = document.getElementById('eliminar-nombre').value;
+            const rubro = document.getElementById('eliminar-rubro').value;
+
+            if (sistema.eliminarProducto(nombre, rubro)) {
+                document.getElementById('eliminar-nombre').value = '';
+                document.getElementById('eliminar-rubro').value = '';
+            }
+        }
+
+        function modificarProducto() {
+            const nombre = document.getElementById('modificar-nombre').value;
+            const cantidad = document.getElementById('modificar-cantidad').value;
+            const precio = document.getElementById('modificar-precio').value;
+            const rubro = document.getElementById('modificar-rubro').value;
+
+            if (sistema.modificarProducto(nombre, cantidad, precio, rubro)) {
+                document.getElementById('modificar-nombre').value = '';
+                document.getElementById('modificar-cantidad').value = '';
+                document.getElementById('modificar-precio').value = '';
+                document.getElementById('modificar-rubro').value = '';
+            }
+        }
+
+        function listarPorRubro() {
+            const rubro = document.getElementById('rubro-nombre').value;
+            const container = document.getElementById('rubro-listado');
+            if (container) container.innerHTML = sistema.listarPorRubro(rubro);
+        }
+
+        function buscarProducto() {
+            const nombre = document.getElementById('buscar-nombre').value;
+            const container = document.getElementById('buscar-resultado');
+            if (container) container.innerHTML = sistema.buscarProducto(nombre);
+        }
+
+        function verStockBajo() {
+            const container = document.getElementById('stock-resultado');
+            if (container) container.innerHTML = sistema.listarStockCritico();
+        }
+
+        function agregarAlCarrito() {
+            const select = document.getElementById('venta-producto');
+            const nombre = select.value;
+            const cantidad = document.getElementById('venta-cantidad').value;
+
+            if (sistema.agregarAlCarrito(nombre, cantidad)) {
+                document.getElementById('venta-cantidad').value = '1';
+                sistema.actualizarSelectVentas();
+            }
+        }
+
+        function vaciarCarrito() { sistema.vaciarCarrito(); }
+        function finalizarVenta() { sistema.finalizarVenta(); }
+
+        function cargarVentasDiarias() {
+            const container = document.getElementById('ventas-diarias-container');
+            if (container) container.innerHTML = sistema.generarHTMLVentasDiarias();
+        }
+
+        function limpiarVentasDiarias() {
+            sistema.limpiarVentas();
+            cargarVentasDiarias();
+        }
+
+        function actualizarGanancias() {
+            sistema.actualizarPanelGanancias();
+            mostrarMensaje('✅ Ganancias actualizadas.', 'exito');
+        }
+
+        function exportarGanancias() { sistema.exportarGanancias(); }
+
+        // ========== INICIALIZACIÓN ==========
+        window.onload = async function() {
+            mostrarPanel('listar');
+            
+            // Inicializar sistema (carga datos de Supabase)
+            await sistema.inicializar();
+
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const activePanel = document.querySelector('.panel.active');
+                    if (activePanel) {
+                        const id = activePanel.id;
+                        if (id === 'panel-agregar') agregarProducto();
+                        else if (id === 'panel-rubro') listarPorRubro();
+                        else if (id === 'panel-buscar') buscarProducto();
+                        else if (id === 'panel-modificar') modificarProducto();
+                        else if (id === 'panel-eliminar') eliminarProducto();
+                        else if (id === 'panel-stockbajo') verStockBajo();
+                        else if (id === 'panel-ventas') agregarAlCarrito();
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
