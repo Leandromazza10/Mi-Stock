@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏪 Sistema de Inventario y Ventas - Supabase</title>
+    <title>🏪 Sistema de Inventario y Ventas</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -26,15 +26,27 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        .barra-estado {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+        }
         .estado-conexion {
+            flex: 1; min-width: 200px;
             text-align: center; padding: 10px; border-radius: 10px;
-            margin-bottom: 20px; font-weight: 600; font-size: 0.95em;
+            font-weight: 600; font-size: 0.9em;
         }
         .estado-conexion.conectado { background: #d4edda; color: #155724; }
         .estado-conexion.desconectado { background: #f8d7da; color: #721c24; }
         .estado-conexion.cargando { background: #fff3cd; color: #856404; }
 
-        /* ALERTA ROJA */
+        #indicador-guardado {
+            background: #f0f0f0; padding: 10px 18px; border-radius: 20px;
+            font-size: 0.9em; font-weight: 600; color: #28a745;
+            white-space: nowrap; transition: all 0.3s ease;
+        }
+
+        /* ========== CARTEL DE ALERTA ROJO ========== */
         .alerta-roja {
             background: #dc3545; border: 4px solid #ff6b6b; border-radius: 15px;
             padding: 20px 25px; margin-bottom: 20px; display: none;
@@ -66,7 +78,7 @@
         .alerta-roja .item-alerta {
             background: rgba(255, 255, 255, 0.15); padding: 12px 18px;
             border-radius: 10px; display: flex; justify-content: space-between;
-            align-items: center; border-left: 4px solid #ffd700; backdrop-filter: blur(5px);
+            align-items: center; border-left: 4px solid #ffd700;
         }
         .alerta-roja .item-alerta .nombre-producto { font-weight: 700; color: white; font-size: 1.1em; }
         .alerta-roja .item-alerta .detalle-producto { font-size: 0.9em; color: #ffd700; }
@@ -103,7 +115,6 @@
         .menu .btn-stock { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
         .menu .btn-ganancias { background: linear-gradient(135deg, #f9ca24 0%, #f0932b 100%); color: #333; }
 
-        /* BOTÓN TITILANTE */
         .menu .btn-stock.titilante {
             animation: titilar 0.8s infinite;
             box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
@@ -290,9 +301,14 @@
 <body>
     <div class="container">
         <h1>🏪 <span>Sistema de Inventario y Ventas</span></h1>
-        
-        <div id="estado-conexion" class="estado-conexion cargando">
-            🔄 Conectando a Supabase...
+
+        <div class="barra-estado">
+            <div id="estado-conexion" class="estado-conexion cargando">
+                🔄 Conectando a Supabase...
+            </div>
+            <div id="indicador-guardado">
+                ✅ Listo
+            </div>
         </div>
 
         <!-- ========== CARTEL DE ALERTA ROJO ========== -->
@@ -368,7 +384,7 @@
         <!-- Panel: Buscar Producto -->
         <div id="panel-buscar" class="panel">
             <h2>🔍 Buscar Producto</h2>
-            <div class="search-box" style="display:flex; gap:10px; margin-bottom:20px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
                 <input type="text" id="buscar-nombre" placeholder="Nombre del producto" style="flex:1; padding:12px; border:2px solid #ddd; border-radius:10px; font-size:16px;">
                 <button class="btn-primary" onclick="buscarProducto()">🔍 Buscar</button>
             </div>
@@ -503,18 +519,16 @@
         </div>
 
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 0.9em;">
-            ☁️ Datos sincronizados con Supabase en la nube
+            ☁️ Datos sincronizados automáticamente con Supabase
         </div>
     </div>
 
-    <!-- Cargar Supabase desde CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
         // ============================================
-        // CONFIGURACIÓN DE SUPABASE
+        // ⚠️ CONFIGURACIÓN DE SUPABASE - REEMPLAZAR
         // ============================================
-        // ⚠️ REEMPLAZA ESTOS VALORES CON TUS CREDENCIALES
         const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
         const SUPABASE_ANON_KEY = 'TU_ANON_KEY_AQUI';
 
@@ -522,7 +536,7 @@
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================
-        // CLASE SISTEMA DE INVENTARIO CON SUPABASE
+        // CLASE SISTEMA DE INVENTARIO
         // ============================================
         class SistemaInventario {
             constructor() {
@@ -532,9 +546,15 @@
                 this.limiteStock = 5;
                 this.canalRealtime = null;
                 this.datosListos = false;
+                
+                // Propiedades de guardado automático
+                this.cambiosPendientes = false;
+                this.guardadoEnProgreso = false;
+                this.timerDebounce = null;
+                this.timerPeriodico = null;
             }
 
-            // ========== CARGA INICIAL DESDE SUPABASE ==========
+            // ========== CARGA INICIAL ==========
             async inicializar() {
                 try {
                     actualizarEstado('🔄 Cargando datos desde Supabase...', 'cargando');
@@ -551,24 +571,58 @@
                     this.inventario = datos.inventario || {};
                     this.ventas = datos.ventas || {};
                     
+                    // Sincronizar con respaldo local si la nube está vacía
+                    if (Object.keys(this.inventario).length === 0) {
+                        const backupInv = localStorage.getItem('inventario_backup');
+                        const backupVent = localStorage.getItem('ventas_backup');
+                        if (backupInv) {
+                            this.inventario = JSON.parse(backupInv);
+                            console.log('📦 Restaurado desde respaldo local');
+                        }
+                        if (backupVent) {
+                            this.ventas = JSON.parse(backupVent);
+                        }
+                    }
+                    
                     this.datosListos = true;
                     actualizarEstado('✅ Conectado a Supabase - Datos sincronizados', 'conectado');
                     console.log('Datos cargados:', this.inventario);
 
                 } catch (error) {
                     console.error('Error al cargar:', error);
-                    actualizarEstado('❌ Error de conexión con Supabase. Usando datos locales.', 'desconectado');
-                    // Fallback a localStorage
-                    this.inventario = JSON.parse(localStorage.getItem('inventario') || '{}');
-                    this.ventas = JSON.parse(localStorage.getItem('ventas') || '{}');
+                    actualizarEstado('⚠️ Sin conexión - Usando respaldo local', 'desconectado');
+                    
+                    const backupInv = localStorage.getItem('inventario_backup');
+                    const backupVent = localStorage.getItem('ventas_backup');
+                    this.inventario = backupInv ? JSON.parse(backupInv) : {};
+                    this.ventas = backupVent ? JSON.parse(backupVent) : {};
                 }
 
                 this.actualizarInterfaz();
                 this.configurarRealtime();
             }
 
-            // ========== GUARDAR EN SUPABASE ==========
+            // ========== GUARDADO AUTOMÁTICO ==========
+            marcarCambiosPendientes() {
+                this.cambiosPendientes = true;
+                this.mostrarEstadoGuardado('pendiente');
+                
+                clearTimeout(this.timerDebounce);
+                this.timerDebounce = setTimeout(() => {
+                    this.guardarDatos();
+                }, 1500);
+            }
+
             async guardarDatos() {
+                if (this.guardadoEnProgreso) {
+                    console.log('⏳ Guardado en progreso, reintentando...');
+                    setTimeout(() => this.guardarDatos(), 500);
+                    return;
+                }
+
+                this.guardadoEnProgreso = true;
+                this.mostrarEstadoGuardado('guardando');
+
                 const datos = {
                     inventario: this.inventario,
                     ventas: this.ventas,
@@ -578,30 +632,88 @@
                 try {
                     const { error } = await db
                         .from('inventario')
-                        .update({ 
+                        .update({
                             datos: datos,
                             actualizado_en: new Date().toISOString()
                         })
                         .eq('id', 1);
 
                     if (error) throw error;
+
+                    // Respaldo local
+                    localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
+                    localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
+                    localStorage.setItem('ultimoGuardado', new Date().toISOString());
+
+                    this.cambiosPendientes = false;
+                    this.mostrarEstadoGuardado('guardado');
+                    console.log('✅ Guardado automático completado:', new Date().toLocaleTimeString());
                     
-                    // También guardar en localStorage como respaldo
-                    localStorage.setItem('inventario', JSON.stringify(this.inventario));
-                    localStorage.setItem('ventas', JSON.stringify(this.ventas));
-                    
-                    console.log('✅ Datos guardados en Supabase');
                 } catch (error) {
-                    console.error('Error al guardar:', error);
-                    mostrarMensaje('⚠️ Error al guardar en la nube. Datos guardados localmente.', 'warning');
-                    localStorage.setItem('inventario', JSON.stringify(this.inventario));
-                    localStorage.setItem('ventas', JSON.stringify(this.ventas));
+                    console.error('❌ Error al guardar:', error);
+                    this.mostrarEstadoGuardado('error');
+                    
+                    // Respaldo local de emergencia
+                    localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
+                    localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
+                    
+                    setTimeout(() => {
+                        this.guardadoEnProgreso = false;
+                        this.guardarDatos();
+                    }, 3000);
+                    return;
                 }
 
-                this.actualizarInterfaz();
+                this.guardadoEnProgreso = false;
             }
 
-            // ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+            mostrarEstadoGuardado(estado) {
+                const indicador = document.getElementById('indicador-guardado');
+                if (!indicador) return;
+
+                const estados = {
+                    'pendiente': { texto: '⏳ Cambios sin guardar...', color: '#ffc107' },
+                    'guardando': { texto: '💾 Guardando...', color: '#17a2b8' },
+                    'guardado': { texto: '✅ Guardado', color: '#28a745' },
+                    'error': { texto: '❌ Error al guardar', color: '#dc3545' }
+                };
+
+                const e = estados[estado] || estados['guardado'];
+                indicador.textContent = e.texto;
+                indicador.style.color = e.color;
+            }
+
+            iniciarGuardadoPeriodico() {
+                this.timerPeriodico = setInterval(() => {
+                    if (this.cambiosPendientes && !this.guardadoEnProgreso) {
+                        console.log('⏰ Guardado periódico automático...');
+                        this.guardarDatos();
+                    }
+                }, 30000);
+            }
+
+            configurarGuardadoAlCerrar() {
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.cambiosPendientes) {
+                        const datos = {
+                            inventario: this.inventario,
+                            ventas: this.ventas,
+                            ultimaActualizacion: new Date().toISOString()
+                        };
+                        
+                        localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
+                        localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
+                        
+                        db.from('inventario')
+                            .update({ datos: datos, actualizado_en: new Date().toISOString() })
+                            .eq('id', 1)
+                            .then(() => console.log('✅ Guardado al cerrar completado'))
+                            .catch(err => console.error('Error al cerrar:', err));
+                    }
+                });
+            }
+
+            // ========== REALTIME ==========
             configurarRealtime() {
                 try {
                     this.canalRealtime = db
@@ -615,9 +727,9 @@
                                 filter: 'id=eq.1'
                             },
                             (payload) => {
-                                console.log('🔄 Cambio recibido desde otro dispositivo:', payload);
+                                console.log('🔄 Cambio recibido desde otro dispositivo');
                                 const nuevosDatos = payload.new?.datos;
-                                if (nuevosDatos) {
+                                if (nuevosDatos && !this.cambiosPendientes) {
                                     this.inventario = nuevosDatos.inventario || {};
                                     this.ventas = nuevosDatos.ventas || {};
                                     this.actualizarInterfaz();
@@ -626,7 +738,7 @@
                             }
                         )
                         .subscribe((status) => {
-                            console.log('Estado de Realtime:', status);
+                            console.log('Estado Realtime:', status);
                         });
                 } catch (error) {
                     console.warn('Realtime no disponible:', error);
@@ -679,7 +791,7 @@
                     mostrarMensaje(`✅ Producto '${nombre}' agregado al rubro '${rubro}' con precio $${precio}.`, 'exito');
                 }
 
-                this.guardarDatos();
+                this.marcarCambiosPendientes();
                 return true;
             }
 
@@ -694,7 +806,7 @@
                             delete this.inventario[rubro];
                         }
                         mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubro}'.`, 'exito');
-                        this.guardarDatos();
+                        this.marcarCambiosPendientes();
                         return true;
                     } else {
                         mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
@@ -709,7 +821,7 @@
                             delete this.inventario[rubroKey];
                         }
                         mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubroKey}'.`, 'exito');
-                        this.guardarDatos();
+                        this.marcarCambiosPendientes();
                         return true;
                     }
                 }
@@ -740,7 +852,7 @@
                         if (!isNaN(nuevaCantidad)) this.inventario[rubro][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubro][nombre].precio = nuevoPrecio;
                         mostrarMensaje(`✅ Producto '${nombre}' actualizado.`, 'exito');
-                        this.guardarDatos();
+                        this.marcarCambiosPendientes();
                         return true;
                     } else {
                         mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
@@ -753,7 +865,7 @@
                         if (!isNaN(nuevaCantidad)) this.inventario[rubroKey][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubroKey][nombre].precio = nuevoPrecio;
                         mostrarMensaje(`✅ Producto '${nombre}' actualizado en '${rubroKey}'.`, 'exito');
-                        this.guardarDatos();
+                        this.marcarCambiosPendientes();
                         return true;
                     }
                 }
@@ -834,7 +946,6 @@
             actualizarCarritoUI() {
                 const container = document.getElementById('carrito-items');
                 const totalContainer = document.getElementById('carrito-total');
-
                 if (!container || !totalContainer) return;
 
                 if (this.carrito.length === 0) {
@@ -885,7 +996,7 @@
                         }
                     }
                     if (!encontrado) {
-                        mostrarMensaje(`❌ Producto '${item.producto}' no encontrado en el inventario.`, 'error');
+                        mostrarMensaje(`❌ Producto '${item.producto}' no encontrado.`, 'error');
                         return false;
                     }
                 }
@@ -911,7 +1022,7 @@
                     items: this.carrito.length
                 });
 
-                // Descontar stock (NO eliminar el producto, solo bajar cantidad)
+                // Descontar stock (producto NO se elimina, solo baja cantidad)
                 for (let item of this.carrito) {
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
@@ -921,7 +1032,7 @@
                     }
                 }
 
-                await this.guardarDatos();
+                this.marcarCambiosPendientes();
 
                 const detalles = this.carrito.map(item => 
                     `${item.cantidad} x ${item.producto}`
@@ -1035,7 +1146,7 @@
             }
 
             irAReponer(producto, rubro) {
-                mostrarMensaje(`📦 Para reponer '${producto}', ve al panel MODIFICAR y aumenta el stock.`, 'info');
+                mostrarMensaje(`📦 Para reponer '${producto}', aumenta el stock en el panel MODIFICAR.`, 'info');
                 document.getElementById('modificar-nombre').value = producto;
                 document.getElementById('modificar-rubro').value = rubro;
                 mostrarPanel('modificar');
@@ -1263,14 +1374,13 @@
                     const ventas = this.ventas[fecha];
                     const totalDia = ventas.reduce((sum, v) => sum + v.total, 0);
                     totalGeneral += totalDia;
-                    const cantidadVentas = ventas.length;
 
                     html += `
                         <div class="ganancia-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>
                                     <div class="fecha">📅 ${fecha}</div>
-                                    <div class="detalle">${cantidadVentas} ventas realizadas</div>
+                                    <div class="detalle">${ventas.length} ventas realizadas</div>
                                 </div>
                                 <div class="monto">$${totalDia.toFixed(2)}</div>
                             </div>
@@ -1440,7 +1550,7 @@
             async limpiarVentas() {
                 if (confirm('¿Estás seguro de eliminar todo el historial de ventas?')) {
                     this.ventas = {};
-                    await this.guardarDatos();
+                    this.marcarCambiosPendientes();
                     mostrarMensaje('✅ Historial de ventas eliminado.', 'exito');
                     this.actualizarInterfaz();
                 }
@@ -1588,6 +1698,28 @@
             
             // Inicializar sistema (carga datos de Supabase)
             await sistema.inicializar();
+            
+            // Iniciar guardado automático
+            sistema.iniciarGuardadoPeriodico();
+            sistema.configurarGuardadoAlCerrar();
+            sistema.mostrarEstadoGuardado('guardado');
+            
+            // Actualizar indicador cada 15 segundos
+            setInterval(() => {
+                if (!sistema.cambiosPendientes) {
+                    const ultimo = localStorage.getItem('ultimoGuardado');
+                    if (ultimo) {
+                        const seg = Math.floor((Date.now() - new Date(ultimo).getTime()) / 1000);
+                        const indicador = document.getElementById('indicador-guardado');
+                        if (indicador) {
+                            if (seg < 5) indicador.textContent = '✅ Guardado ahora';
+                            else if (seg < 60) indicador.textContent = `✅ Guardado hace ${seg}s`;
+                            else if (seg < 3600) indicador.textContent = `✅ Guardado hace ${Math.floor(seg/60)}min`;
+                            else indicador.textContent = `✅ Guardado hace ${Math.floor(seg/3600)}h`;
+                        }
+                    }
+                }
+            }, 15000);
 
             document.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
