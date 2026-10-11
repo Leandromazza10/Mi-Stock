@@ -1016,34 +1016,135 @@
         // ============================================
         class SistemaInventario {
             constructor() {
-                this.archivo = 'inventario_completo';
-                this.archivoVentas = 'ventas_diarias';
-                this.inventario = this.cargarDatos(this.archivo, {});
-                this.ventas = this.cargarDatos(this.archivoVentas, {});
-                this.carrito = [];
-                this.limiteStock = 5;
-            }
+                constructor() {
+    this.inventario = {};
+    this.ventas = {};
+    this.carrito = [];
+    this.limiteStock = 5;
+    this.canalRealtime = null;
+    this.datosListos = false;
+    
+    // 🆕 Propiedades para guardado automático
+    this.cambiosPendientes = false;
+    this.guardadoEnProgreso = false;
+    this.timerDebounce = null;
+    this.timerPeriodico = null;
+}
 
-            cargarDatos(archivo, defaultValor) {
-                const datos = localStorage.getItem(archivo);
-                if (datos) {
-                    try {
-                        return JSON.parse(datos);
-                    } catch {
-                        return defaultValor;
-                    }
-                }
-                return defaultValor;
-            }
+// 🆕 Marca cambios pendientes y programa guardado automático (debounce 1.5s)
+marcarCambiosPendientes() {
+    this.cambiosPendientes = true;
+    this.mostrarEstadoGuardado('pendiente');
+    
+    clearTimeout(this.timerDebounce);
+    this.timerDebounce = setTimeout(() => {
+        this.guardarDatos();
+    }, 1500);
+}
 
-            guardarDatos() {
-                localStorage.setItem(this.archivo, JSON.stringify(this.inventario));
-                localStorage.setItem(this.archivoVentas, JSON.stringify(this.ventas));
-                this.actualizarEstadisticas();
-                this.actualizarAlertaRoja();
-                this.actualizarIndicadorStock();
-            }
+// 🆕 Guarda en Supabase con protección contra guardados simultáneos
+async guardarDatos() {
+    if (this.guardadoEnProgreso) {
+        console.log('⏳ Guardado en progreso, reintentando en 500ms...');
+        setTimeout(() => this.guardarDatos(), 500);
+        return;
+    }
 
+    this.guardadoEnProgreso = true;
+    this.mostrarEstadoGuardado('guardando');
+
+    const datos = {
+        inventario: this.inventario,
+        ventas: this.ventas,
+        ultimaActualizacion: new Date().toISOString()
+    };
+
+    try {
+        const { error } = await db
+            .from('inventario')
+            .update({
+                datos: datos,
+                actualizado_en: new Date().toISOString()
+            })
+            .eq('id', 1);
+
+        if (error) throw error;
+
+        // Respaldo local por si falla la nube
+        localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
+        localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
+        localStorage.setItem('ultimoGuardado', new Date().toISOString());
+
+        this.cambiosPendientes = false;
+        this.mostrarEstadoGuardado('guardado');
+        console.log('✅ Guardado automático completado:', new Date().toLocaleTimeString());
+        
+    } catch (error) {
+        console.error('❌ Error al guardar:', error);
+        this.mostrarEstadoGuardado('error');
+        
+        // Reintentar en 3 segundos
+        setTimeout(() => {
+            this.guardadoEnProgreso = false;
+            this.guardarDatos();
+        }, 3000);
+        return;
+    }
+
+    this.guardadoEnProgreso = false;
+}
+
+// 🆕 Muestra el estado del guardado en pantalla
+mostrarEstadoGuardado(estado) {
+    const indicador = document.getElementById('indicador-guardado');
+    if (!indicador) return;
+
+    const estados = {
+        'pendiente': { texto: '⏳ Cambios sin guardar...', color: '#ffc107' },
+        'guardando': { texto: '💾 Guardando...', color: '#17a2b8' },
+        'guardado': { texto: '✅ Guardado', color: '#28a745' },
+        'error': { texto: '❌ Error al guardar', color: '#dc3545' }
+    };
+
+    const e = estados[estado] || estados['guardado'];
+    indicador.textContent = e.texto;
+    indicador.style.color = e.color;
+    indicador.style.fontWeight = '600';
+}
+
+// 🆕 Guardado periódico cada 30 segundos si hay cambios pendientes
+iniciarGuardadoPeriodico() {
+    this.timerPeriodico = setInterval(() => {
+        if (this.cambiosPendientes && !this.guardadoEnProgreso) {
+            console.log('⏰ Guardado periódico automático...');
+            this.guardarDatos();
+        }
+    }, 30000);
+}
+
+// 🆕 Guardado forzado al cerrar/recargar la página
+configurarGuardadoAlCerrar() {
+    window.addEventListener('beforeunload', (e) => {
+        if (this.cambiosPendientes) {
+            const datos = {
+                inventario: this.inventario,
+                ventas: this.ventas,
+                ultimaActualizacion: new Date().toISOString()
+            };
+            
+            // Respaldo inmediato en localStorage
+            localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
+            localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
+            
+            // Intentar guardar en Supabase (puede no completarse, pero lo intentamos)
+            db.from('inventario')
+                .update({ datos: datos, actualizado_en: new Date().toISOString() })
+                .eq('id', 1)
+                .then(() => console.log('✅ Guardado al cerrar completado'))
+                .catch(err => console.error('Error al cerrar:', err));
+        }
+    });
+}
             // ========== PRODUCTOS ==========
             agregarProducto(nombre, cantidad, precio, rubro) {
                 nombre = nombre.trim().toLowerCase();
@@ -1080,9 +1181,19 @@
                     mostrarMensaje(`✅ Producto '${nombre}' agregado al rubro '${rubro}' con precio $${precio}.`, 'exito');
                 }
 
-                this.guardarDatos();
-                this.actualizarSelectVentas();
-                return true;
+                // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
             }
 
             eliminarProducto(nombre, rubro = null) {
@@ -1096,9 +1207,19 @@
                             delete this.inventario[rubro];
                         }
                         mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubro}'.`, 'exito');
-                        this.guardarDatos();
-                        this.actualizarSelectVentas();
-                        return true;
+                        // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
                     } else {
                         mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
                         return false;
@@ -1112,9 +1233,19 @@
                             delete this.inventario[rubroKey];
                         }
                         mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubroKey}'.`, 'exito');
-                        this.guardarDatos();
-                        this.actualizarSelectVentas();
-                        return true;
+                        // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
                     }
                 }
 
@@ -1144,9 +1275,19 @@
                         if (!isNaN(nuevaCantidad)) this.inventario[rubro][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubro][nombre].precio = nuevoPrecio;
                         mostrarMensaje(`✅ Producto '${nombre}' actualizado.`, 'exito');
-                        this.guardarDatos();
-                        this.actualizarSelectVentas();
-                        return true;
+                        // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
                     } else {
                         mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
                         return false;
@@ -1158,9 +1299,19 @@
                         if (!isNaN(nuevaCantidad)) this.inventario[rubroKey][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubroKey][nombre].precio = nuevoPrecio;
                         mostrarMensaje(`✅ Producto '${nombre}' actualizado en '${rubroKey}'.`, 'exito');
-                        this.guardarDatos();
-                        this.actualizarSelectVentas();
-                        return true;
+                        // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
                     }
                 }
 
@@ -1326,8 +1477,19 @@
                     }
                 }
 
-                this.guardarDatos();
-                this.actualizarSelectVentas();
+                // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
 
                 const detalles = this.carrito.map(item => 
                     `${item.cantidad} x ${item.producto}`
@@ -1868,7 +2030,19 @@
             limpiarVentas() {
                 if (confirm('¿Estás seguro de eliminar todo el historial de ventas?')) {
                     this.ventas = {};
-                    this.guardarDatos();
+                   // ANTES ❌
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.guardarDatos();
+    return true;
+}
+
+// DESPUÉS ✅
+agregarProducto(nombre, cantidad, precio, rubro) {
+    // ... lógica ...
+    this.marcarCambiosPendientes();  // Guarda automáticamente
+    return true;
+}
                     mostrarMensaje('✅ Historial de ventas eliminado.', 'exito');
                     this.actualizarEstadisticas();
                 }
