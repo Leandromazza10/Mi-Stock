@@ -547,14 +547,12 @@
                 this.canalRealtime = null;
                 this.datosListos = false;
                 
-                // Guardado automático
                 this.cambiosPendientes = false;
                 this.guardadoEnProgreso = false;
                 this.timerDebounce = null;
                 this.timerPeriodico = null;
             }
 
-            // ========== CARGA INICIAL ==========
             async inicializar() {
                 try {
                     actualizarEstado('🔄 Cargando datos desde Supabase...', 'cargando');
@@ -571,17 +569,11 @@
                     this.inventario = datos.inventario || {};
                     this.ventas = datos.ventas || {};
                     
-                    // Si la nube está vacía, intentar recuperar del respaldo local
                     if (Object.keys(this.inventario).length === 0) {
                         const backupInv = localStorage.getItem('inventario_backup');
                         const backupVent = localStorage.getItem('ventas_backup');
-                        if (backupInv) {
-                            this.inventario = JSON.parse(backupInv);
-                            console.log('📦 Restaurado desde respaldo local');
-                        }
-                        if (backupVent) {
-                            this.ventas = JSON.parse(backupVent);
-                        }
+                        if (backupInv) this.inventario = JSON.parse(backupInv);
+                        if (backupVent) this.ventas = JSON.parse(backupVent);
                     }
                     
                     this.datosListos = true;
@@ -602,7 +594,6 @@
                 this.configurarRealtime();
             }
 
-            // ========== GUARDADO AUTOMÁTICO ==========
             marcarCambiosPendientes() {
                 this.cambiosPendientes = true;
                 this.mostrarEstadoGuardado('pendiente');
@@ -615,7 +606,6 @@
 
             async guardarDatos() {
                 if (this.guardadoEnProgreso) {
-                    console.log('⏳ Guardado en progreso, reintentando...');
                     setTimeout(() => this.guardarDatos(), 500);
                     return;
                 }
@@ -640,20 +630,18 @@
 
                     if (error) throw error;
 
-                    // Respaldo local
                     localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
                     localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
                     localStorage.setItem('ultimoGuardado', new Date().toISOString());
 
                     this.cambiosPendientes = false;
                     this.mostrarEstadoGuardado('guardado');
-                    console.log('✅ Guardado automático completado:', new Date().toLocaleTimeString());
+                    console.log('✅ Guardado automático:', new Date().toLocaleTimeString());
                     
                 } catch (error) {
                     console.error('❌ Error al guardar:', error);
                     this.mostrarEstadoGuardado('error');
                     
-                    // Respaldo local de emergencia
                     localStorage.setItem('inventario_backup', JSON.stringify(this.inventario));
                     localStorage.setItem('ventas_backup', JSON.stringify(this.ventas));
                     
@@ -686,7 +674,6 @@
             iniciarGuardadoPeriodico() {
                 this.timerPeriodico = setInterval(() => {
                     if (this.cambiosPendientes && !this.guardadoEnProgreso) {
-                        console.log('⏰ Guardado periódico automático...');
                         this.guardarDatos();
                     }
                 }, 30000);
@@ -706,14 +693,11 @@
                         
                         db.from('inventario')
                             .update({ datos: datos, actualizado_en: new Date().toISOString() })
-                            .eq('id', 1)
-                            .then(() => console.log('✅ Guardado al cerrar completado'))
-                            .catch(err => console.error('Error al cerrar:', err));
+                            .eq('id', 1);
                     }
                 });
             }
 
-            // ========== REALTIME ==========
             configurarRealtime() {
                 try {
                     this.canalRealtime = db
@@ -727,7 +711,7 @@
                                 filter: 'id=eq.1'
                             },
                             (payload) => {
-                                console.log('🔄 Cambio recibido desde otro dispositivo');
+                                console.log('🔄 Cambio desde otro dispositivo');
                                 const nuevosDatos = payload.new?.datos;
                                 if (nuevosDatos && !this.cambiosPendientes) {
                                     this.inventario = nuevosDatos.inventario || {};
@@ -738,14 +722,13 @@
                             }
                         )
                         .subscribe((status) => {
-                            console.log('Estado Realtime:', status);
+                            console.log('Realtime:', status);
                         });
                 } catch (error) {
                     console.warn('Realtime no disponible:', error);
                 }
             }
 
-            // ========== ACTUALIZAR INTERFAZ ==========
             actualizarInterfaz() {
                 actualizarListado();
                 this.actualizarSelectVentas();
@@ -769,26 +752,23 @@
                 precio = parseFloat(precio);
 
                 if (isNaN(cantidad) || cantidad < 0) {
-                    mostrarMensaje('❌ La cantidad debe ser un número válido y no negativo.', 'error');
+                    mostrarMensaje('❌ La cantidad debe ser válida.', 'error');
                     return false;
                 }
-
                 if (isNaN(precio) || precio < 0) {
-                    mostrarMensaje('❌ El precio debe ser un número válido y no negativo.', 'error');
+                    mostrarMensaje('❌ El precio debe ser válido.', 'error');
                     return false;
                 }
 
-                if (!this.inventario[rubro]) {
-                    this.inventario[rubro] = {};
-                }
+                if (!this.inventario[rubro]) this.inventario[rubro] = {};
 
                 if (this.inventario[rubro][nombre]) {
                     this.inventario[rubro][nombre].cantidad += cantidad;
                     this.inventario[rubro][nombre].precio = precio;
-                    mostrarMensaje(`✅ Producto '${nombre}' actualizado. Nueva cantidad: ${this.inventario[rubro][nombre].cantidad}`, 'exito');
+                    mostrarMensaje(`✅ '${nombre}' actualizado. Cantidad: ${this.inventario[rubro][nombre].cantidad}`, 'exito');
                 } else {
-                    this.inventario[rubro][nombre] = { cantidad: cantidad, precio: precio };
-                    mostrarMensaje(`✅ Producto '${nombre}' agregado al rubro '${rubro}' con precio $${precio}.`, 'exito');
+                    this.inventario[rubro][nombre] = { cantidad, precio };
+                    mostrarMensaje(`✅ '${nombre}' agregado al rubro '${rubro}'.`, 'exito');
                 }
 
                 this.marcarCambiosPendientes();
@@ -802,37 +782,31 @@
                     rubro = rubro.trim().toLowerCase();
                     if (this.inventario[rubro] && this.inventario[rubro][nombre]) {
                         delete this.inventario[rubro][nombre];
-                        if (Object.keys(this.inventario[rubro]).length === 0) {
-                            delete this.inventario[rubro];
-                        }
-                        mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubro}'.`, 'exito');
+                        if (Object.keys(this.inventario[rubro]).length === 0) delete this.inventario[rubro];
+                        mostrarMensaje(`✅ '${nombre}' eliminado de '${rubro}'.`, 'exito');
                         this.marcarCambiosPendientes();
                         return true;
-                    } else {
-                        mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
-                        return false;
                     }
+                    mostrarMensaje(`❌ '${nombre}' no encontrado en '${rubro}'.`, 'error');
+                    return false;
                 }
 
                 for (let rubroKey in this.inventario) {
                     if (this.inventario[rubroKey][nombre]) {
                         delete this.inventario[rubroKey][nombre];
-                        if (Object.keys(this.inventario[rubroKey]).length === 0) {
-                            delete this.inventario[rubroKey];
-                        }
-                        mostrarMensaje(`✅ Producto '${nombre}' eliminado del rubro '${rubroKey}'.`, 'exito');
+                        if (Object.keys(this.inventario[rubroKey]).length === 0) delete this.inventario[rubroKey];
+                        mostrarMensaje(`✅ '${nombre}' eliminado de '${rubroKey}'.`, 'exito');
                         this.marcarCambiosPendientes();
                         return true;
                     }
                 }
 
-                mostrarMensaje(`❌ Producto '${nombre}' no encontrado en ningún rubro.`, 'error');
+                mostrarMensaje(`❌ '${nombre}' no encontrado.`, 'error');
                 return false;
             }
 
             modificarProducto(nombre, nuevaCantidad, nuevoPrecio, rubro = null) {
                 nombre = nombre.trim().toLowerCase();
-
                 nuevaCantidad = parseInt(nuevaCantidad);
                 nuevoPrecio = parseFloat(nuevoPrecio);
 
@@ -840,7 +814,6 @@
                     mostrarMensaje('❌ La cantidad no puede ser negativa.', 'error');
                     return false;
                 }
-
                 if (!isNaN(nuevoPrecio) && nuevoPrecio < 0) {
                     mostrarMensaje('❌ El precio no puede ser negativo.', 'error');
                     return false;
@@ -851,30 +824,29 @@
                     if (this.inventario[rubro] && this.inventario[rubro][nombre]) {
                         if (!isNaN(nuevaCantidad)) this.inventario[rubro][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubro][nombre].precio = nuevoPrecio;
-                        mostrarMensaje(`✅ Producto '${nombre}' actualizado.`, 'exito');
+                        mostrarMensaje(`✅ '${nombre}' actualizado.`, 'exito');
                         this.marcarCambiosPendientes();
                         return true;
-                    } else {
-                        mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el rubro '${rubro}'.`, 'error');
-                        return false;
                     }
+                    mostrarMensaje(`❌ '${nombre}' no encontrado en '${rubro}'.`, 'error');
+                    return false;
                 }
 
                 for (let rubroKey in this.inventario) {
                     if (this.inventario[rubroKey][nombre]) {
                         if (!isNaN(nuevaCantidad)) this.inventario[rubroKey][nombre].cantidad = nuevaCantidad;
                         if (!isNaN(nuevoPrecio)) this.inventario[rubroKey][nombre].precio = nuevoPrecio;
-                        mostrarMensaje(`✅ Producto '${nombre}' actualizado en '${rubroKey}'.`, 'exito');
+                        mostrarMensaje(`✅ '${nombre}' actualizado en '${rubroKey}'.`, 'exito');
                         this.marcarCambiosPendientes();
                         return true;
                     }
                 }
 
-                mostrarMensaje(`❌ Producto '${nombre}' no encontrado.`, 'error');
+                mostrarMensaje(`❌ '${nombre}' no encontrado.`, 'error');
                 return false;
             }
 
-            // ========== CARRITO Y VENTAS ==========
+            // ========== CARRITO ==========
             agregarAlCarrito(nombre, cantidad) {
                 nombre = nombre.trim().toLowerCase();
                 cantidad = parseInt(cantidad);
@@ -883,9 +855,8 @@
                     mostrarMensaje('❌ Seleccione un producto.', 'error');
                     return false;
                 }
-
                 if (isNaN(cantidad) || cantidad <= 0) {
-                    mostrarMensaje('❌ Ingrese una cantidad válida mayor a 0.', 'error');
+                    mostrarMensaje('❌ Cantidad inválida.', 'error');
                     return false;
                 }
 
@@ -901,32 +872,32 @@
                 }
 
                 if (!productoEncontrado) {
-                    mostrarMensaje(`❌ Producto '${nombre}' no encontrado en el inventario.`, 'error');
+                    mostrarMensaje(`❌ '${nombre}' no encontrado.`, 'error');
                     return false;
                 }
 
                 if (productoEncontrado.cantidad < cantidad) {
-                    mostrarMensaje(`❌ Stock insuficiente. Disponible: ${productoEncontrado.cantidad} unidades.`, 'error');
+                    mostrarMensaje(`❌ Stock insuficiente. Disponible: ${productoEncontrado.cantidad}`, 'error');
                     return false;
                 }
 
                 const existente = this.carrito.find(item => item.producto === nombre);
                 if (existente) {
                     if (existente.cantidad + cantidad > productoEncontrado.cantidad) {
-                        mostrarMensaje(`❌ No hay suficiente stock. Disponible: ${productoEncontrado.cantidad}`, 'error');
+                        mostrarMensaje(`❌ Stock insuficiente. Disponible: ${productoEncontrado.cantidad}`, 'error');
                         return false;
                     }
                     existente.cantidad += cantidad;
                 } else {
                     this.carrito.push({
                         producto: nombre,
-                        cantidad: cantidad,
+                        cantidad,
                         precioUnitario: productoEncontrado.precio,
                         rubro: rubroEncontrado
                     });
                 }
 
-                mostrarMensaje(`✅ Agregado al carrito: ${cantidad} x ${nombre}`, 'exito');
+                mostrarMensaje(`✅ Agregado: ${cantidad} x ${nombre}`, 'exito');
                 this.actualizarCarritoUI();
                 return true;
             }
@@ -934,7 +905,6 @@
             eliminarDelCarrito(index) {
                 this.carrito.splice(index, 1);
                 this.actualizarCarritoUI();
-                mostrarMensaje('🗑️ Producto eliminado del carrito.', 'info');
             }
 
             vaciarCarrito() {
@@ -979,7 +949,7 @@
 
             async finalizarVenta() {
                 if (this.carrito.length === 0) {
-                    mostrarMensaje('❌ El carrito está vacío. Agregue productos primero.', 'error');
+                    mostrarMensaje('❌ Carrito vacío.', 'error');
                     return false;
                 }
 
@@ -988,7 +958,7 @@
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
                             if (this.inventario[rubro][item.producto].cantidad < item.cantidad) {
-                                mostrarMensaje(`❌ Stock insuficiente para ${item.producto}. Disponible: ${this.inventario[rubro][item.producto].cantidad}`, 'error');
+                                mostrarMensaje(`❌ Stock insuficiente para ${item.producto}`, 'error');
                                 return false;
                             }
                             encontrado = true;
@@ -996,7 +966,7 @@
                         }
                     }
                     if (!encontrado) {
-                        mostrarMensaje(`❌ Producto '${item.producto}' no encontrado.`, 'error');
+                        mostrarMensaje(`❌ '${item.producto}' no encontrado.`, 'error');
                         return false;
                     }
                 }
@@ -1006,9 +976,7 @@
                 const hora = hoy.toLocaleTimeString();
                 const totalVenta = this.carrito.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0);
 
-                if (!this.ventas[fechaKey]) {
-                    this.ventas[fechaKey] = [];
-                }
+                if (!this.ventas[fechaKey]) this.ventas[fechaKey] = [];
 
                 this.ventas[fechaKey].push({
                     productos: this.carrito.map(item => ({
@@ -1018,11 +986,11 @@
                         rubro: item.rubro
                     })),
                     total: totalVenta,
-                    hora: hora,
+                    hora,
                     items: this.carrito.length
                 });
 
-                // Descontar stock (producto NO se elimina, solo baja cantidad)
+                // Descontar stock SIN eliminar el producto
                 for (let item of this.carrito) {
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
@@ -1034,18 +1002,14 @@
 
                 this.marcarCambiosPendientes();
 
-                const detalles = this.carrito.map(item => 
-                    `${item.cantidad} x ${item.producto}`
-                ).join(', ');
-
-                mostrarMensaje(`💰 Venta realizada: ${detalles} - Total: $${totalVenta.toFixed(2)}`, 'exito');
+                const detalles = this.carrito.map(item => `${item.cantidad} x ${item.producto}`).join(', ');
+                mostrarMensaje(`💰 Venta: ${detalles} - Total: $${totalVenta.toFixed(2)}`, 'exito');
                 
                 this.mostrarDetalleVentaMultiple(this.carrito, totalVenta);
                 
                 this.carrito = [];
                 this.actualizarCarritoUI();
                 this.actualizarInterfaz();
-
                 return true;
             }
 
@@ -1146,7 +1110,7 @@
             }
 
             irAReponer(producto, rubro) {
-                mostrarMensaje(`📦 Para reponer '${producto}', aumenta el stock en el panel MODIFICAR.`, 'info');
+                mostrarMensaje(`📦 Reponer '${producto}' en el panel MODIFICAR.`, 'info');
                 document.getElementById('modificar-nombre').value = producto;
                 document.getElementById('modificar-rubro').value = rubro;
                 mostrarPanel('modificar');
@@ -1186,11 +1150,8 @@
 
                 if (rubro) {
                     rubro = rubro.trim().toLowerCase();
-                    if (this.inventario[rubro]) {
-                        return this._generarHTMLRubro(rubro);
-                    } else {
-                        return `<div class="vacio">❌ Rubro '${rubro}' no encontrado.</div>`;
-                    }
+                    if (this.inventario[rubro]) return this._generarHTMLRubro(rubro);
+                    return `<div class="vacio">❌ Rubro '${rubro}' no encontrado.</div>`;
                 }
 
                 let html = '';
@@ -1268,7 +1229,7 @@
 
             buscarProducto(nombre) {
                 nombre = nombre.trim().toLowerCase();
-                if (!nombre) return '<div class="vacio">❌ Ingrese un nombre para buscar.</div>';
+                if (!nombre) return '<div class="vacio">❌ Ingrese un nombre.</div>';
 
                 let encontrado = false;
                 let html = '';
@@ -1293,10 +1254,7 @@
                     }
                 }
 
-                if (!encontrado) {
-                    return `<div class="vacio">❌ Producto '${nombre}' no encontrado.</div>`;
-                }
-
+                if (!encontrado) return `<div class="vacio">❌ '${nombre}' no encontrado.</div>`;
                 return html;
             }
 
@@ -1305,9 +1263,7 @@
                 const criticos = this.getProductosCriticos();
                 const todos = [...agotados.map(a => ({...a, cantidad: 0})), ...criticos];
                 
-                if (todos.length === 0) {
-                    return '<div class="vacio">✅ No hay productos con stock crítico.</div>';
-                }
+                if (todos.length === 0) return '<div class="vacio">✅ Sin productos críticos.</div>';
 
                 let html = '';
                 for (let item of todos) {
@@ -1365,7 +1321,7 @@
                 const fechas = Object.keys(this.ventas).sort().reverse();
                 
                 if (fechas.length === 0) {
-                    return '<div class="vacio">📭 No hay ventas registradas para calcular ganancias.</div>';
+                    return '<div class="vacio">📭 No hay ventas registradas.</div>';
                 }
 
                 let html = '';
@@ -1401,10 +1357,9 @@
                 const ganancias = this.calcularGanancias();
                 let texto = '=== REPORTE DE GANANCIAS ===\n\n';
                 texto += `📅 Fecha: ${new Date().toLocaleDateString()}\n`;
-                texto += `💰 Ganancia de hoy: $${ganancias.hoy.toFixed(2)}\n`;
-                texto += `📅 Ganancia de la semana: $${ganancias.semana.toFixed(2)}\n`;
-                texto += `📆 Ganancia del mes: $${ganancias.mes.toFixed(2)}\n\n`;
-                texto += '=== DETALLE POR DÍA ===\n\n';
+                texto += `💰 Hoy: $${ganancias.hoy.toFixed(2)}\n`;
+                texto += `📅 Semana: $${ganancias.semana.toFixed(2)}\n`;
+                texto += `📆 Mes: $${ganancias.mes.toFixed(2)}\n\n`;
 
                 const fechas = Object.keys(this.ventas).sort().reverse();
                 for (let fecha of fechas) {
@@ -1421,7 +1376,7 @@
                 a.click();
                 URL.revokeObjectURL(url);
 
-                mostrarMensaje('✅ Reporte de ganancias exportado.', 'exito');
+                mostrarMensaje('✅ Reporte exportado.', 'exito');
             }
 
             actualizarPanelGanancias() {
@@ -1435,7 +1390,6 @@
                 document.getElementById('ganancia-mes').textContent = `$${ganancias.mes.toFixed(2)}`;
             }
 
-            // ========== VENTAS DIARIAS ==========
             getTotalVentasHoy() {
                 const hoy = new Date().toISOString().split('T')[0];
                 const ventasHoy = this.ventas[hoy] || [];
@@ -1492,9 +1446,7 @@
 
             generarHTMLVentasDiarias() {
                 const fechas = Object.keys(this.ventas).sort().reverse();
-                if (fechas.length === 0) {
-                    return '<div class="vacio">📭 No hay ventas registradas.</div>';
-                }
+                if (fechas.length === 0) return '<div class="vacio">📭 No hay ventas registradas.</div>';
 
                 let html = '';
                 let totalGeneral = 0;
@@ -1509,7 +1461,7 @@
                             <div class="fecha">📅 ${fecha}</div>
                             <div class="resumen">
                                 <span>💰 Total del día: <strong>$${totalDia.toFixed(2)}</strong></span>
-                                <span>📦 ${ventas.length} ventas realizadas</span>
+                                <span>📦 ${ventas.length} ventas</span>
                             </div>
                     `;
 
@@ -1540,7 +1492,7 @@
 
                 html += `
                     <div class="total-general">
-                        💰 TOTAL GENERAL DE VENTAS: $${totalGeneral.toFixed(2)}
+                        💰 TOTAL GENERAL: $${totalGeneral.toFixed(2)}
                     </div>
                 `;
 
@@ -1548,10 +1500,10 @@
             }
 
             async limpiarVentas() {
-                if (confirm('¿Estás seguro de eliminar todo el historial de ventas?')) {
+                if (confirm('¿Eliminar todo el historial de ventas?')) {
                     this.ventas = {};
                     this.marcarCambiosPendientes();
-                    mostrarMensaje('✅ Historial de ventas eliminado.', 'exito');
+                    mostrarMensaje('✅ Historial eliminado.', 'exito');
                     this.actualizarInterfaz();
                 }
             }
@@ -1605,7 +1557,6 @@
             if (container) container.innerHTML = sistema.listarPorRubro();
         }
 
-        // ========== ACCIONES ==========
         function agregarProducto() {
             const nombre = document.getElementById('agregar-nombre').value;
             const cantidad = document.getElementById('agregar-cantidad').value;
