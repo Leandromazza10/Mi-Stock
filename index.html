@@ -40,32 +40,30 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* ========== CARTEL FIJO DE ALERTA ========== */
-        .alerta-fija {
-            background: #dc3545;
-            color: white;
+        /* ========== CARTEL AMARILLO DE SIN STOCK ========== */
+        .alerta-amarilla {
+            background: #fff3cd;
+            border: 4px solid #ffc107;
             border-radius: 15px;
             padding: 20px 25px;
             margin-bottom: 20px;
             display: none;
             animation: slideDown 0.5s ease;
-            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.5);
-            border: 3px solid #ff6b6b;
-            position: relative;
+            box-shadow: 0 4px 20px rgba(255, 193, 7, 0.5);
         }
 
-        .alerta-fija.activa {
+        .alerta-amarilla.activa {
             display: block;
         }
 
-        .alerta-fija .header-alerta {
+        .alerta-amarilla .header-alerta {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
-        .alerta-fija .header-alerta .icono {
+        .alerta-amarilla .header-alerta .icono {
             font-size: 2.5em;
             animation: parpadeo 0.8s infinite;
         }
@@ -75,54 +73,63 @@
             50% { opacity: 0.4; transform: scale(1.1); }
         }
 
-        .alerta-fija .header-alerta h2 {
-            font-size: 1.8em;
+        .alerta-amarilla .header-alerta h2 {
+            font-size: 1.7em;
             margin: 0;
-            color: white;
+            color: #856404;
         }
 
-        .alerta-fija .header-alerta .badge {
-            background: white;
-            color: #dc3545;
+        .alerta-amarilla .header-alerta .badge {
+            background: #ffc107;
+            color: #856404;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 1.1em;
         }
 
-        .alerta-fija .lista-productos {
+        .alerta-amarilla .lista-productos {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 10px;
-            margin-top: 10px;
             max-height: 250px;
             overflow-y: auto;
         }
 
-        .alerta-fija .item-alerta {
-            background: rgba(255,255,255,0.15);
+        .alerta-amarilla .item-alerta {
+            background: white;
             padding: 12px 18px;
             border-radius: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 4px solid #ff6b6b;
-            backdrop-filter: blur(5px);
+            border-left: 5px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .alerta-fija .item-alerta .nombre-producto {
+        .alerta-amarilla .item-alerta .nombre-producto {
             font-weight: 700;
             font-size: 1.1em;
+            color: #333;
         }
 
-        .alerta-fija .item-alerta .detalle-producto {
+        .alerta-amarilla .item-alerta .detalle-producto {
             font-size: 0.9em;
-            opacity: 0.9;
+            color: #666;
         }
 
-        .alerta-fija .item-alerta .btn-reponer {
-            background: white;
-            color: #dc3545;
+        .alerta-amarilla .item-alerta .sin-stock-badge {
+            background: #ffc107;
+            color: #856404;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85em;
+        }
+
+        .alerta-amarilla .item-alerta .btn-reponer {
+            background: #28a745;
+            color: white;
             border: none;
             padding: 6px 18px;
             border-radius: 8px;
@@ -132,16 +139,9 @@
             font-size: 0.9em;
         }
 
-        .alerta-fija .item-alerta .btn-reponer:hover {
+        .alerta-amarilla .item-alerta .btn-reponer:hover {
+            background: #218838;
             transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .alerta-fija .sin-alertas {
-            color: white;
-            text-align: center;
-            padding: 20px;
-            font-size: 1.2em;
         }
 
         @keyframes slideDown {
@@ -194,20 +194,21 @@
         .menu .btn-stock { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
         .menu .btn-ganancias { background: linear-gradient(135deg, #f9ca24 0%, #f0932b 100%); color: #333; }
 
-        /* ========== BOTÓN DE STOCK BAJO CON TITILANTE ========== */
+        /* ========== BOTÓN STOCK BAJO TITILANTE ========== */
         .menu .btn-stock.titilante {
             animation: titilar 0.8s infinite;
-            box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+            box-shadow: 0 0 25px rgba(255, 107, 107, 0.9);
+            background: linear-gradient(135deg, #ff0000 0%, #ff6b6b 100%);
         }
 
         @keyframes titilar {
             0%, 100% { 
                 transform: scale(1);
-                box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+                box-shadow: 0 0 25px rgba(255, 107, 107, 0.9);
             }
             50% { 
-                transform: scale(1.05);
-                box-shadow: 0 0 40px rgba(255, 107, 107, 1);
+                transform: scale(1.08);
+                box-shadow: 0 0 45px rgba(255, 0, 0, 1);
             }
         }
 
@@ -215,7 +216,7 @@
             background: white;
             color: #dc3545;
             border-radius: 50%;
-            width: 22px;
+            min-width: 22px;
             height: 22px;
             display: inline-flex;
             align-items: center;
@@ -226,6 +227,7 @@
             position: absolute;
             top: -8px;
             right: -8px;
+            padding: 0 5px;
             animation: parpadeo 0.8s infinite;
         }
 
@@ -246,6 +248,23 @@
             color: #333;
             margin-bottom: 20px;
             font-size: 1.8em;
+        }
+
+        /* Título del panel de stock bajo titilante */
+        .panel h2.titilante {
+            animation: titilarTexto 0.8s infinite;
+            color: #dc3545;
+        }
+
+        @keyframes titilarTexto {
+            0%, 100% { 
+                opacity: 1;
+                text-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+            }
+            50% { 
+                opacity: 0.5;
+                text-shadow: 0 0 25px rgba(220, 53, 69, 1);
+            }
         }
 
         .form-group {
@@ -331,40 +350,6 @@
             box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-            color: #333;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(253, 160, 133, 0.4);
-        }
-
-        .btn-stock {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-stock:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
-        }
-
         .inventario-container {
             max-height: 500px;
             overflow-y: auto;
@@ -434,7 +419,8 @@
         }
 
         .producto-cantidad.agotado {
-            background: #dc3545;
+            background: #ffc107;
+            color: #856404;
             animation: pulse 0.8s infinite;
         }
 
@@ -523,19 +509,6 @@
             font-size: 1.2em;
         }
 
-        .venta-item .venta-detalle {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 5px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .venta-item .venta-detalle span {
-            font-size: 0.95em;
-        }
-
         .venta-diaria {
             background: white;
             border-radius: 10px;
@@ -584,10 +557,6 @@
         .scroll::-webkit-scrollbar-thumb {
             background: #667eea;
             border-radius: 10px;
-        }
-
-        .scroll::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
         }
 
         .estadisticas {
@@ -663,7 +632,7 @@
             background: white;
             border-radius: 8px;
             margin-bottom: 8px;
-            border-left: 5px solid #dc3545;
+            border-left: 5px solid #ffc107;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
@@ -684,7 +653,7 @@
 
         .stock-item .stock-cantidad {
             font-weight: 700;
-            color: #dc3545;
+            color: #856404;
             font-size: 1.2em;
             margin: 0 20px;
         }
@@ -748,11 +717,11 @@
                 font-size: 1.8em;
             }
 
-            .alerta-fija .lista-productos {
+            .alerta-amarilla .lista-productos {
                 grid-template-columns: 1fr;
             }
 
-            .alerta-fija .header-alerta h2 {
+            .alerta-amarilla .header-alerta h2 {
                 font-size: 1.3em;
             }
         }
@@ -762,13 +731,13 @@
     <div class="container">
         <h1>🏪 <span>Sistema de Inventario y Ventas</span></h1>
 
-        <!-- ========== CARTEL FIJO DE ALERTA ========== -->
-        <div id="alerta-fija" class="alerta-fija">
+        <!-- ========== CARTEL AMARILLO DE SIN STOCK ========== -->
+        <div id="alerta-amarilla" class="alerta-amarilla">
             <div class="header-alerta">
-                <span class="icono">🚨</span>
-                <h2>¡STOCK CRÍTICO!</h2>
+                <span class="icono">⚠️</span>
+                <h2>¡PRODUCTO SIN STOCK!</h2>
                 <span class="badge" id="contador-alerta">0</span>
-                <span style="margin-left:auto; font-weight:600; font-size:1.1em;">⚠️ Reponer urgentemente</span>
+                <span style="margin-left:auto; font-weight:600; font-size:1.05em; color:#856404;">📦 Reponer para continuar vendiendo</span>
             </div>
             <div id="lista-alerta" class="lista-productos"></div>
         </div>
@@ -1011,7 +980,7 @@
                 localStorage.setItem(this.archivo, JSON.stringify(this.inventario));
                 localStorage.setItem(this.archivoVentas, JSON.stringify(this.ventas));
                 this.actualizarEstadisticas();
-                this.actualizarAlertaFija();
+                this.actualizarAlertaAmarilla();
                 this.actualizarIndicadorStock();
             }
 
@@ -1286,15 +1255,14 @@
                     items: this.carrito.length
                 });
 
+                // Descontar stock. Si queda en 0, NO se elimina del inventario,
+                // se deja en 0 para que aparezca en la alerta amarilla y en stock bajo.
                 for (let item of this.carrito) {
                     for (let rubro in this.inventario) {
                         if (this.inventario[rubro][item.producto]) {
                             this.inventario[rubro][item.producto].cantidad -= item.cantidad;
-                            if (this.inventario[rubro][item.producto].cantidad === 0) {
-                                delete this.inventario[rubro][item.producto];
-                                if (Object.keys(this.inventario[rubro]).length === 0) {
-                                    delete this.inventario[rubro];
-                                }
+                            if (this.inventario[rubro][item.producto].cantidad < 0) {
+                                this.inventario[rubro][item.producto].cantidad = 0;
                             }
                             break;
                         }
@@ -1351,54 +1319,72 @@
                 container.innerHTML = html;
             }
 
-            // ========== ALERTA FIJA ==========
-            getProductosCriticos() {
-                const criticos = [];
+            // ========== ALERTA AMARILLA (SIN STOCK) ==========
+            getProductosSinStock() {
+                const sinStock = [];
                 for (let rubro in this.inventario) {
                     for (let producto in this.inventario[rubro]) {
                         const data = this.inventario[rubro][producto];
-                        if (data.cantidad < this.limiteStock) {
-                            criticos.push({
+                        if (data.cantidad === 0) {
+                            sinStock.push({
                                 producto: producto,
                                 rubro: rubro,
-                                cantidad: data.cantidad,
-                                precio: data.precio,
-                                estado: data.cantidad === 0 ? 'AGOTADO' : 'STOCK BAJO'
+                                precio: data.precio
                             });
                         }
                     }
                 }
-                return criticos;
+                return sinStock;
             }
 
-            actualizarAlertaFija() {
-                const alerta = document.getElementById('alerta-fija');
+            getProductosStockBajo() {
+                const bajos = [];
+                for (let rubro in this.inventario) {
+                    for (let producto in this.inventario[rubro]) {
+                        const data = this.inventario[rubro][producto];
+                        if (data.cantidad > 0 && data.cantidad < this.limiteStock) {
+                            bajos.push({
+                                producto: producto,
+                                rubro: rubro,
+                                cantidad: data.cantidad,
+                                precio: data.precio
+                            });
+                        }
+                    }
+                }
+                return bajos;
+            }
+
+            getProductosCriticos() {
+                // Críticos = sin stock + stock bajo
+                return [...this.getProductosSinStock(), ...this.getProductosStockBajo()];
+            }
+
+            actualizarAlertaAmarilla() {
+                const alerta = document.getElementById('alerta-amarilla');
                 const lista = document.getElementById('lista-alerta');
                 const contador = document.getElementById('contador-alerta');
-                const criticos = this.getProductosCriticos();
+                const sinStock = this.getProductosSinStock();
 
-                if (criticos.length === 0) {
+                if (sinStock.length === 0) {
                     alerta.classList.remove('activa');
                     return;
                 }
 
                 alerta.classList.add('activa');
-                contador.textContent = criticos.length;
+                contador.textContent = sinStock.length;
 
                 let html = '';
-                for (let item of criticos) {
-                    const icono = item.cantidad === 0 ? '🚫' : '⚠️';
+                for (let item of sinStock) {
                     html += `
                         <div class="item-alerta">
                             <div>
-                                <span class="nombre-producto">${icono} ${item.producto}</span>
-                                <span class="detalle-producto">(${item.rubro})</span>
-                                <span style="font-weight:700; margin-left:10px; color:#ff6b6b;">
-                                    ${item.cantidad} unidades
-                                </span>
+                                <span class="nombre-producto">🚫 ${item.producto}</span>
+                                <span class="detalle-producto"> (${item.rubro})</span>
+                                <span class="sin-stock-badge" style="margin-left:8px;">SIN STOCK</span>
                             </div>
-                            <div>
-                                <span style="font-weight:600; margin-right:10px;">$${item.precio.toFixed(2)}</span>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-weight:600; color:#28a745;">$${item.precio.toFixed(2)}</span>
                                 <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
                                     ✅ Reponer
                                 </button>
@@ -1418,7 +1404,7 @@
                 document.getElementById('modificar-cantidad').focus();
             }
 
-            // ========== INDICADOR DE STOCK EN BOTÓN ==========
+            // ========== INDICADOR STOCK EN BOTÓN ==========
             actualizarIndicadorStock() {
                 const btn = document.getElementById('btn-stock-bajo');
                 const indicador = document.getElementById('indicador-stock');
@@ -1427,17 +1413,28 @@
                 if (criticos.length === 0) {
                     btn.classList.remove('titilante');
                     indicador.style.display = 'none';
-                    return;
+                } else {
+                    btn.classList.add('titilante');
+                    indicador.style.display = 'inline-flex';
+                    indicador.textContent = criticos.length;
                 }
 
-                btn.classList.add('titilante');
-                indicador.style.display = 'inline-flex';
-                indicador.textContent = criticos.length;
-
-                // Cambiar el título del panel si está visible
+                // Título del panel de stock bajo titilante
                 const tituloPanel = document.getElementById('titulo-stock-bajo');
                 if (tituloPanel) {
-                    tituloPanel.textContent = `⚠️ Productos con Stock Crítico (${criticos.length})`;
+                    const sinStock = this.getProductosSinStock();
+                    const stockBajo = this.getProductosStockBajo();
+                    
+                    if (criticos.length === 0) {
+                        tituloPanel.classList.remove('titilante');
+                        tituloPanel.textContent = '✅ No hay productos con stock crítico';
+                    } else {
+                        tituloPanel.classList.add('titilante');
+                        let nombres = [];
+                        sinStock.forEach(p => nombres.push(p.producto));
+                        stockBajo.forEach(p => nombres.push(p.producto));
+                        tituloPanel.textContent = `⚠️ STOCK CRÍTICO: ${nombres.join(', ').toUpperCase()}`;
+                    }
                 }
             }
 
@@ -1565,32 +1562,55 @@
                 return html;
             }
 
-            // ========== STOCK ==========
+            // ========== STOCK BAJO ==========
             listarStockBajo(limite = 5) {
                 limite = parseInt(limite) || 5;
-                const criticos = this.getProductosCriticos();
                 
-                if (criticos.length === 0) {
+                const sinStock = this.getProductosSinStock();
+                const stockBajo = this.getProductosStockBajo();
+
+                if (sinStock.length === 0 && stockBajo.length === 0) {
                     return '<div class="vacio">✅ No hay productos con stock crítico.</div>';
                 }
 
                 let html = '';
-                for (let item of criticos) {
-                    const icono = item.cantidad === 0 ? '🚫' : '⚠️';
-                    const color = item.cantidad === 0 ? '#dc3545' : '#ffc107';
-                    html += `
-                        <div class="stock-item" style="border-left-color: ${color};">
-                            <div class="producto-info">
-                                <div class="nombre">${icono} ${item.producto}</div>
-                                <div class="detalle">Rubro: ${item.rubro} | Precio: $${item.precio.toFixed(2)}</div>
+
+                if (sinStock.length > 0) {
+                    html += `<h3 style="color:#856404; margin-bottom:10px;">🚫 Sin Stock (${sinStock.length})</h3>`;
+                    for (let item of sinStock) {
+                        html += `
+                            <div class="stock-item" style="border-left-color: #ffc107; background: #fff3cd;">
+                                <div class="producto-info">
+                                    <div class="nombre">🚫 ${item.producto}</div>
+                                    <div class="detalle">Rubro: ${item.rubro} | Precio: $${item.precio.toFixed(2)}</div>
+                                </div>
+                                <div class="stock-cantidad">0 unidades</div>
+                                <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
+                                    ✅ Reponer
+                                </button>
                             </div>
-                            <div class="stock-cantidad" style="color: ${color};">${item.cantidad} unidades</div>
-                            <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
-                                ✅ Reponer
-                            </button>
-                        </div>
-                    `;
+                        `;
+                    }
                 }
+
+                if (stockBajo.length > 0) {
+                    html += `<h3 style="color:#856404; margin:15px 0 10px 0;">⚠️ Stock Bajo (${stockBajo.length})</h3>`;
+                    for (let item of stockBajo) {
+                        html += `
+                            <div class="stock-item">
+                                <div class="producto-info">
+                                    <div class="nombre">⚠️ ${item.producto}</div>
+                                    <div class="detalle">Rubro: ${item.rubro} | Precio: $${item.precio.toFixed(2)}</div>
+                                </div>
+                                <div class="stock-cantidad">${item.cantidad} unidades</div>
+                                <button class="btn-reponer" onclick="sistema.irAReponer('${item.producto}', '${item.rubro}')">
+                                    ✅ Reponer
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+
                 return html;
             }
 
@@ -1632,7 +1652,6 @@
             }
 
             generarHTMLGanancias() {
-                const ganancias = this.calcularGanancias();
                 const fechas = Object.keys(this.ventas).sort().reverse();
                 
                 if (fechas.length === 0) {
@@ -1697,11 +1716,6 @@
             }
 
             // ========== VENTAS DIARIAS ==========
-            getVentasDiarias() {
-                const hoy = new Date().toISOString().split('T')[0];
-                return this.ventas[hoy] || [];
-            }
-
             getTotalVentasHoy() {
                 const hoy = new Date().toISOString().split('T')[0];
                 const ventasHoy = this.ventas[hoy] || [];
@@ -1936,6 +1950,7 @@
             const limite = document.getElementById('stock-limite').value;
             const container = document.getElementById('stock-resultado');
             container.innerHTML = sistema.listarStockBajo(limite);
+            sistema.actualizarIndicadorStock();
         }
 
         function agregarAlCarrito() {
@@ -1982,7 +1997,7 @@
             sistema.actualizarSelectVentas();
             sistema.actualizarEstadisticas();
             sistema.actualizarCarritoUI();
-            sistema.actualizarAlertaFija();
+            sistema.actualizarAlertaAmarilla();
             sistema.actualizarIndicadorStock();
 
             document.addEventListener('keypress', function(e) {
@@ -2002,7 +2017,7 @@
             });
 
             setInterval(() => {
-                sistema.actualizarAlertaFija();
+                sistema.actualizarAlertaAmarilla();
                 sistema.actualizarIndicadorStock();
             }, 30000);
         };
